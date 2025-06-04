@@ -109,37 +109,26 @@ const ProjectManagement = () => {
   };
 
   const handleImagePreview = (e, type) => {
-    if (type === 'detail') {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setDetailImagePreviews(prev => [...prev, reader.result]);
-          setDetailImageFiles(prev => [...prev, file]);
-        };
-        reader.readAsDataURL(file);
-      });
-    } else {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        switch (type) {
-          case 'thumbnail':
-            setThumbnailPreview(reader.result);
-            setThumbnailFile(file);
-            break;
-          case 'main':
-            setMainImagePreview(reader.result);
-            setMainImageFile(file);
-            break;
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      switch (type) {
+        case 'thumbnail':
+          setThumbnailPreview(reader.result);
+          setThumbnailFile(file);
+          break;
+        case 'main':
+          setMainImagePreview(reader.result);
+          setMainImageFile(file);
+          break;
+        default:
+          console.warn('Unknown image type:', type);
+          break;
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDetailImageDelete = (index) => {
@@ -364,6 +353,9 @@ const ProjectManagement = () => {
           case 'main':
             setEditMainImagePreview(reader.result);
             setEditMainImageFile(file);
+            break;
+          default:
+            console.warn('Unknown image type:', type);
             break;
         }
       };

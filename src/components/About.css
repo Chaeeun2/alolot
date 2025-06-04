@@ -71,7 +71,7 @@
     border-right: none;
     border-bottom: 4px solid #000;
     justify-content: space-between;
-    transition: all 0.6s ease;
+    transition: height 0.6s ease;
   }
 
   .about-page .menu-item {

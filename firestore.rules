@@ -1,6 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 공개 데이터 - 모든 사용자가 읽기 가능
+    match /categories/{document} {
+      allow read: if true;
+      allow write: if request.auth != null; // 관리자만 수정 가능
+    }
+    
+    match /images/{document} {
+      allow read: if true;
+      allow write: if request.auth != null; // 관리자만 수정 가능
+    }
+    
+    match /projects/{document} {
+      allow read: if true;
+      allow write: if request.auth != null; // 관리자만 수정 가능
+    }
+    
+    match /info/{document} {
+      allow read: if true;
+      allow write: if request.auth != null; // 관리자만 수정 가능
+    }
+    
+    match /about/{document} {
+      allow read: if true;
+      allow write: if request.auth != null; // 관리자만 수정 가능
+    }
+    
+    // 기타 모든 컬렉션 - 인증된 사용자만 접근 가능
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

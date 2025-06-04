@@ -4,9 +4,7 @@ import './MainPage.css';
 
 const MainPage = () => {
   const [images, setImages] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
 
   useEffect(() => {
     const fetchMainImages = async () => {
@@ -22,35 +20,6 @@ const MainPage = () => {
 
     fetchMainImages();
   }, []);
-
-  // 자동 슬라이드 기능
-  useEffect(() => {
-    if (!autoPlay || images.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => 
-        prevIndex === images.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [autoPlay, images.length, currentIndex]);
-
-  const handlePrevious = () => {
-    setCurrentIndex(currentIndex === 0 ? images.length - 1 : currentIndex - 1);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex(currentIndex === images.length - 1 ? 0 : currentIndex + 1);
-  };
-
-  const handleDotClick = (index) => {
-    setCurrentIndex(index);
-  };
-
-  const toggleAutoPlay = () => {
-    setAutoPlay(!autoPlay);
-  };
 
   if (loading) {
     return <div className="main-loading">Loading...</div>;
@@ -70,21 +39,18 @@ const MainPage = () => {
   return (
     <div className="main-slideshow">
       <div className="slideshow-container">
-        {/* 메인 이미지 */}
+        {/* 메인 이미지 - 첫 번째 이미지만 표시 */}
         <div className="slide-wrapper">
-        <div
-            className="slide-track"
-            style={{ transform: `translateY(-${currentIndex * 100}%)` }}
-        >
-            {images.map((image, index) => (
-            <div key={image.id} className="slide">
+          <div className="slide-track">
+            {images.length > 0 && (
+              <div className="slide">
                 <img
-                src={image.url}
-                alt={image.title || `슬라이드 이미지 ${index + 1}`}
+                  src={images[0].url}
+                  alt={images[0].title || '메인 이미지'}
                 />
-            </div>
-            ))}
-        </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

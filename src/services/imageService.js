@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, query, where, orderBy, limit, writeBatch, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, orderBy, writeBatch, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { deleteFileFromR2 } from './r2Service';
@@ -94,10 +94,11 @@ export const saveImageInfo = async (imageData) => {
 // 메인 이미지들 정보 가져오기 (여러 장)
 export const getMainImages = async () => {
   try {
+    // 인덱스 생성 전까지 단순한 쿼리 사용
     const q = query(
       collection(db, 'images'),
-      where('category', '==', 'main'),
-      orderBy('createdAt', 'desc')
+      where('category', '==', 'main')
+      // orderBy는 인덱스 생성 후 추가 예정
     );
 
     const querySnapshot = await getDocs(q);
@@ -108,6 +109,7 @@ export const getMainImages = async () => {
       order: doc.data().order || 0
     }));
 
+    // 클라이언트 사이드에서 정렬
     // order 필드로 정렬, order가 같으면 createdAt으로 정렬
     images.sort((a, b) => {
       if (a.order !== b.order) {
