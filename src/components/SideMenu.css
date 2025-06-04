@@ -1,0 +1,115 @@
+.side-menu {
+  width: 50%;
+  height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  border-right: 5px solid #000;
+  box-sizing: border-box;
+  transition: width 0.6s ease;
+}
+
+/* 프로젝트 페이지에서의 사이드 메뉴 스타일 */
+.side-menu.projects-page {
+  width: 30%;
+}
+
+/* 프로젝트 상세 페이지에서의 사이드 메뉴 스타일 */
+.side-menu.project-detail-page {
+  width: 30%;
+  min-width: 30%;
+}
+
+.menu-top {
+  flex: 0 0 auto;
+}
+
+.menu-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 60px 0;
+  transition: all 0.6s ease;
+}
+
+.menu-bottom {
+  flex: 0 0 auto;
+}
+
+.menu-item {
+  font-size: 7.5vw;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.6s ease;
+}
+
+/* 프로젝트 페이지에서의 메뉴 아이템 폰트 크기 조정 */
+.projects-page .menu-item {
+  font-size: 6vw;
+}
+
+/* 프로젝트 상세 페이지에서의 메뉴 아이템 폰트 크기 조정 */
+.project-detail-page .menu-item {
+  font-size: 6vw;
+}
+
+.menu-item:hover {
+  transform: translateX(5px);
+}
+
+.menu-center .menu-item:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .side-menu {
+    padding: 15px;
+    width: 100%;
+    height: 61vw;
+    /* 모바일 브라우저 viewport 정확성을 위한 fallback */
+    /* height: calc(35vh - env(safe-area-inset-top, 0px)); */
+    border-right: none;
+    border-bottom: 5px solid #000;
+    justify-content: space-between;
+    transition: height 0.6s ease;
+  }
+
+  .menu-item {
+    font-size: 15vw;
+    font-weight: 600;
+  }
+
+  .menu-item:hover {
+    transform: translateX(0px);
+  }
+
+  .menu-bottom {
+    display: none;
+  }
+
+  .menu-center {
+    margin-bottom: 0;
+    justify-content: flex-end;
+    gap: 0px;
+    margin-top: 0;
+    text-align: right;
+  }
+
+  /* 프로젝트 페이지에서의 사이드 메뉴 스타일 */
+  .side-menu.projects-page,
+  .side-menu.project-detail-page {
+    width: 100%;
+  }
+}

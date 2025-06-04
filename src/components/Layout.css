@@ -1,0 +1,21 @@
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.layout-content {
+  flex: 1;
+  margin-left: 50%;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content {
+  padding: 0;
+  margin-left: 50%;
+}
+
+@media (max-width: 768px) {
+  .layout-content {
+    margin-left: 0;
+  }
+}

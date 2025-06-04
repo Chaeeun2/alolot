@@ -1,0 +1,234 @@
+.main-image {
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: #fff;
+}
+
+.main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.main-content {
+  margin-left: 50%;
+  width: 50%;
+  transition: all 0.6s ease;
+}
+
+.main-slideshow {
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  position: relative;
+  overflow: hidden;
+}
+
+.slideshow-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.slide-wrapper {
+  height: calc(var(--vh, 1vh) * 100);
+  position: relative;
+}
+
+.slide-track {
+  display: flex;
+  flex-direction: column; /* 세로 방향으로 슬라이드 나열 */
+  transition: transform 1s ease;
+  height: 100%; /* 이 값은 JS에 의해 동적으로 결정되어야 더 좋음 */
+}
+
+.slide {
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  flex-shrink: 0;
+}
+
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 네비게이션 버튼 */
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.nav-button.prev {
+  left: 2rem;
+}
+
+.nav-button.next {
+  right: 2rem;
+}
+
+/* 하단 컨트롤들 */
+.slideshow-controls {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  z-index: 10;
+}
+
+/* 도트 인디케이터 */
+.dots-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  background: white;
+  border-color: white;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
+/* 자동재생 버튼 */
+.autoplay-button {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.autoplay-button:hover,
+.autoplay-button.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border-color: white;
+}
+
+/* 이미지 카운터 */
+.image-counter {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 10;
+}
+
+/* 로딩 및 빈 상태 */
+.main-loading {
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.main-no-images {
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.no-images-message {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.no-images-message h2 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.no-images-message p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    height: calc(100vh - 61vw);
+    margin-top: 61vw;
+    /* 모바일 브라우저 viewport 정확성을 위한 추가 조정 */
+    /* margin-top: calc(35vh - env(safe-area-inset-top, 0px) + 5px); */
+    /* min-margin-top: 125px; */ /* 최소 여백 보장 */
+  }
+
+  .main-slideshow {
+    height: calc(100vh - 61vw);
+    overflow: hidden;
+  }
+
+  .slide-wrapper {
+    height: calc(100vh - 61vw);
+  }
+
+  .slide {
+    height: calc(100vh - 61vw);
+  }
+
+  .about-page .about {
+    display: none;
+  }
+}
