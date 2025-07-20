@@ -4,6 +4,47 @@ import { getMainImages, saveMainImageInfo, deleteMainImage, updateMainImagesOrde
 import { getPresignedUrl } from '../../services/r2Service';
 import './MainPageManagement.css';
 
+// 파일 크기 제한 (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// 이미지 압축 함수
+const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // 원본 비율 유지하면서 크기 조정
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      const newWidth = img.width * ratio;
+      const newHeight = img.height * ratio;
+      
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob], file.name, {
+          type: file.type,
+          lastModified: Date.now(),
+        });
+        resolve(compressedFile);
+      }, file.type, quality);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// 파일 크기 검증 함수
+const validateFileSize = (file) => {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 업로드 가능합니다.`);
+  }
+};
+
 const MainPageManagement = () => {
   const [mainImages, setMainImages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,15 +76,21 @@ const MainPageManagement = () => {
     try {
       setUploading(true);
       
-      // R2에 이미지 업로드하고 실제 URL 받기
-      const imageUrl = await getPresignedUrl(file);
+      // 파일 크기 검증
+      validateFileSize(file);
+      
+      // 이미지 압축
+      const compressedFile = await compressImage(file);
+      
+      // R2에 압축된 이미지 업로드하고 실제 URL 받기
+      const imageUrl = await getPresignedUrl(compressedFile);
       
       // Firebase에 이미지 정보 저장 (실제 업로드된 URL 사용)
       const order = mainImages.length; // 마지막 순서로 추가
       await saveMainImageInfo({
         url: imageUrl, // 실제 업로드된 URL 사용
-        fileName: file.name,
-        title: file.name,
+        fileName: compressedFile.name,
+        title: compressedFile.name,
         description: '메인페이지 슬라이드 이미지'
       }, order);
 

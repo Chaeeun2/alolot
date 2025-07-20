@@ -1,66 +1,9 @@
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, writeBatch, doc, deleteDoc, getDoc } from 'firebase/firestore';
-import { S3Client } from '@aws-sdk/client-s3';
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { deleteFileFromR2 } from './r2Service';
-
-// 필수 환경 변수 확인
-const requiredEnvVars = [
-  'REACT_APP_R2_ENDPOINT',
-  'REACT_APP_R2_ACCESS_KEY_ID',
-  'REACT_APP_R2_SECRET_ACCESS_KEY',
-  'REACT_APP_R2_BUCKET_NAME',
-  'REACT_APP_R2_PUBLIC_URL'
-];
-
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-if (missingEnvVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-}
-
-// R2 클라이언트 설정
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.REACT_APP_R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.REACT_APP_R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
-  },
-  forcePathStyle: true
-});
 
 // Cloudflare R2 Public URL
 const R2_PUBLIC_URL = process.env.REACT_APP_R2_PUBLIC_URL;
-
-// Pre-signed URL 생성
-export const createPresignedUploadUrl = async (fileName, fileType) => {
-  try {
-    const { url, fields } = await createPresignedPost(r2Client, {
-      Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
-      Key: fileName,
-      Conditions: [
-        ['content-length-range', 0, 10485760], // 최대 10MB
-        ['starts-with', '$Content-Type', fileType],
-        // CORS 관련 조건 추가
-        ['eq', '$success_action_status', '201'],
-      ],
-      Fields: {
-        'success_action_status': '201', // 성공 시 201 상태 코드 반환
-        'Content-Type': fileType,
-      },
-      Expires: 600, // 10분
-    });
-
-    return {
-      url,
-      fields,
-      publicUrl: `${R2_PUBLIC_URL}/${fileName}`
-    };
-  } catch (error) {
-    console.error('Error creating presigned URL:', error);
-    throw error;
-  }
-};
 
 // 이미지 URL 가져오기
 export const getImageUrl = (fileName) => {
@@ -200,34 +143,7 @@ export const updateMainImagesOrder = async (images) => {
   }
 };
 
-export const getPresignedUrl = async (fileName, fileType) => {
-  try {
-    const requestBody = {
-      fileName,
-      fileType,
-      bucketName: process.env.REACT_APP_R2_BUCKET_NAME
-    };
 
-    const response = await fetch('/api/get-presigned-url', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    return data;
-  } catch (error) {
-    console.error('Presigned URL 생성 중 오류:', error);
-    throw error;
-  }
-};
 
 // 메인 이미지 정보 가져오기 (단일, 호환성용)
 export const getMainImage = async () => {

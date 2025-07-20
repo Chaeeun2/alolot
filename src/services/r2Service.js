@@ -1,5 +1,8 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
+// 파일 크기 제한 (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 const ACCOUNT_ID = process.env.REACT_APP_R2_ACCOUNT_ID;
 const ACCESS_KEY_ID = process.env.REACT_APP_R2_ACCESS_KEY_ID;
 const SECRET_ACCESS_KEY = process.env.REACT_APP_R2_SECRET_ACCESS_KEY;
@@ -22,6 +25,11 @@ const S3 = new S3Client({
 export const getPresignedUrl = async (file) => {
   if (!file) {
     throw new Error('No file provided');
+  }
+
+  // 파일 크기 검증
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 업로드 가능합니다.`);
   }
 
   // 파일명에서 확장자 추출

@@ -8,6 +8,47 @@ import './ProjectManagement.css';
 import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
+// 파일 크기 제한 (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// 이미지 압축 함수
+const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // 원본 비율 유지하면서 크기 조정
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      const newWidth = img.width * ratio;
+      const newHeight = img.height * ratio;
+      
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob], file.name, {
+          type: file.type,
+          lastModified: Date.now(),
+        });
+        resolve(compressedFile);
+      }, file.type, quality);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// 파일 크기 검증 함수
+const validateFileSize = (file) => {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 업로드 가능합니다.`);
+  }
+};
+
 const ProjectManagement = () => {
   const [projects, setProjects] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -43,12 +84,12 @@ const ProjectManagement = () => {
   const [editMainImageFile, setEditMainImageFile] = useState(null);
   const [editDetailImageFiles, setEditDetailImageFiles] = useState([]);
 
-  // 이미지 미리보기 상태 (기존)
+  // 이미지 미리보기 URL 상태 (URL.createObjectURL 사용)
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [mainImagePreview, setMainImagePreview] = useState('');
   const [detailImagePreviews, setDetailImagePreviews] = useState([]);
 
-  // 수정용 이미지 미리보기 상태
+  // 수정용 이미지 미리보기 URL 상태
   const [editThumbnailPreview, setEditThumbnailPreview] = useState('');
   const [editMainImagePreview, setEditMainImagePreview] = useState('');
   const [editDetailImagePreviews, setEditDetailImagePreviews] = useState([]);
@@ -56,6 +97,19 @@ const ProjectManagement = () => {
   // 동영상 URL 상태 추가
   const [videoUrl, setVideoUrl] = useState('');
   const [editVideoUrl, setEditVideoUrl] = useState('');
+
+  // 컴포넌트 언마운트 시 미리보기 URL 정리
+  useEffect(() => {
+    return () => {
+      // 미리보기 URL들 정리
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+      if (mainImagePreview) URL.revokeObjectURL(mainImagePreview);
+      detailImagePreviews.forEach(url => URL.revokeObjectURL(url));
+      if (editThumbnailPreview) URL.revokeObjectURL(editThumbnailPreview);
+      if (editMainImagePreview) URL.revokeObjectURL(editMainImagePreview);
+      editDetailImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   // YouTube 비디오 ID 추출 함수
   const extractYouTubeVideoId = (url) => {
@@ -129,48 +183,62 @@ const ProjectManagement = () => {
     }
   };
 
-  const handleImagePreview = (e, type) => {
-    if (type === 'detail') {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
+  const handleImagePreview = async (e, type) => {
+    try {
+      if (type === 'detail') {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // detailMedia 배열에만 추가
+        for (const file of files) {
+          // 파일 크기 검증
+          validateFileSize(file);
+          
+          // 이미지 압축
+          const compressedFile = await compressImage(file);
+          
+          // URL.createObjectURL 사용하여 메모리 효율성 향상
+          const previewUrl = URL.createObjectURL(compressedFile);
+          
           setNewProject(prev => ({
             ...prev,
             detailMedia: [...prev.detailMedia, {
               type: 'image',
-              url: reader.result, // 임시 미리보기 URL
-              file: file,
+              url: previewUrl, // 임시 미리보기 URL
+              file: compressedFile,
               order: prev.detailMedia.length
             }]
           }));
-        };
-        reader.readAsDataURL(file);
-      });
-    } else {
-      const file = e.target.files[0];
-      if (!file) return;
+        }
+      } else {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
+        // 파일 크기 검증
+        validateFileSize(file);
+        
+        // 이미지 압축
+        const compressedFile = await compressImage(file);
+        
+        // URL.createObjectURL 사용
+        const previewUrl = URL.createObjectURL(compressedFile);
+        
         switch (type) {
           case 'thumbnail':
-            setThumbnailPreview(reader.result);
-            setThumbnailFile(file);
+            setThumbnailPreview(previewUrl);
+            setThumbnailFile(compressedFile);
             break;
           case 'main':
-            setMainImagePreview(reader.result);
-            setMainImageFile(file);
+            setMainImagePreview(previewUrl);
+            setMainImageFile(compressedFile);
             break;
           default:
             console.warn('Unknown image type:', type);
             break;
         }
-      };
-      reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      alert(error.message);
+      e.target.value = ''; // 파일 입력 초기화
     }
   };
 
@@ -444,6 +512,19 @@ const ProjectManagement = () => {
   };
 
   const handleEditCancel = () => {
+    // 미리보기 URL들 정리
+    if (editThumbnailPreview && editThumbnailPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(editThumbnailPreview);
+    }
+    if (editMainImagePreview && editMainImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(editMainImagePreview);
+    }
+    editDetailImagePreviews.forEach(url => {
+      if (url && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+      }
+    });
+    
     setEditingProjectId(null);
     setShowEditModal(false);
     setEditProject({
@@ -471,52 +552,67 @@ const ProjectManagement = () => {
     }));
   };
 
-  const handleEditImagePreview = (e, type) => {
-    if (type === 'detail') {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
+  const handleEditImagePreview = async (e, type) => {
+    try {
+      if (type === 'detail') {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setEditDetailImagePreviews(prev => [...prev, reader.result]);
-          setEditDetailImageFiles(prev => [...prev, file]);
+        for (const file of files) {
+          // 파일 크기 검증
+          validateFileSize(file);
+          
+          // 이미지 압축
+          const compressedFile = await compressImage(file);
+          
+          // URL.createObjectURL 사용
+          const previewUrl = URL.createObjectURL(compressedFile);
+          
+          setEditDetailImagePreviews(prev => [...prev, previewUrl]);
+          setEditDetailImageFiles(prev => [...prev, compressedFile]);
           
           // editProject.detailMedia에도 임시 항목 추가 (업로드 후 실제 URL로 교체됨)
           setEditProject(prev => ({
             ...prev,
             detailMedia: [...prev.detailMedia, {
               type: 'image',
-              url: reader.result, // 임시 미리보기 URL
-              file: file,
+              url: previewUrl, // 임시 미리보기 URL
+              file: compressedFile,
               order: prev.detailMedia.length,
               isNew: true // 새로 추가된 항목임을 표시
             }]
           }));
-        };
-        reader.readAsDataURL(file);
-      });
-    } else {
-      const file = e.target.files[0];
-      if (!file) return;
+        }
+      } else {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
+        // 파일 크기 검증
+        validateFileSize(file);
+        
+        // 이미지 압축
+        const compressedFile = await compressImage(file);
+        
+        // URL.createObjectURL 사용
+        const previewUrl = URL.createObjectURL(compressedFile);
+        
         switch (type) {
           case 'thumbnail':
-            setEditThumbnailPreview(reader.result);
-            setEditThumbnailFile(file);
+            setEditThumbnailPreview(previewUrl);
+            setEditThumbnailFile(compressedFile);
             break;
           case 'main':
-            setEditMainImagePreview(reader.result);
-            setEditMainImageFile(file);
+            setEditMainImagePreview(previewUrl);
+            setEditMainImageFile(compressedFile);
             break;
           default:
             console.warn('Unknown image type:', type);
             break;
         }
-      };
-      reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      alert(error.message);
+      e.target.value = ''; // 파일 입력 초기화
     }
   };
 
