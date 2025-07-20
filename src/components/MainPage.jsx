@@ -1,10 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getMainImages } from '../services/imageService';
 import './MainPage.css';
 
 const MainPage = () => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 여부 체크
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 슬라이드 높이 계산
+  const getSlideHeight = () => {
+    if (isMobile) {
+      // 모바일: 100vh - 61vw
+      const vw = window.innerWidth / 100;
+      return `calc(100vh - ${61 * vw}px)`;
+    }
+    return '100vh'; // 데스크톱
+  };
 
   useEffect(() => {
     const fetchMainImages = async () => {
@@ -20,6 +44,34 @@ const MainPage = () => {
 
     fetchMainImages();
   }, []);
+
+  // 다음 슬라이드로 이동
+  const nextSlide = useCallback(() => {
+    if (images.length === 0) return;
+    setCurrentSlide(prev => (prev + 1) % images.length);
+  }, [images.length]);
+
+  // 이전 슬라이드로 이동
+  const prevSlide = useCallback(() => {
+    if (images.length === 0) return;
+    setCurrentSlide(prev => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  // 특정 슬라이드로 이동
+  const goToSlide = useCallback((index) => {
+    setCurrentSlide(index);
+  }, []);
+
+  // 자동 슬라이드 효과
+  useEffect(() => {
+    if (!isAutoPlay || images.length <= 1) return;
+
+    const intervalId = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % images.length);
+    }, 4000); // 4초마다 슬라이드 변경
+
+    return () => clearInterval(intervalId);
+  }, [isAutoPlay, images.length]);
 
   if (loading) {
     return <div className="main-loading">Loading...</div>;
@@ -39,17 +91,26 @@ const MainPage = () => {
   return (
     <div className="main-slideshow">
       <div className="slideshow-container">
-        {/* 메인 이미지 - 첫 번째 이미지만 표시 */}
         <div className="slide-wrapper">
-          <div className="slide-track">
-            {images.length > 0 && (
-              <div className="slide">
+          <div 
+            className="slide-track"
+            style={{
+              transform: isMobile 
+                ? `translateY(-${currentSlide * (window.innerHeight - (61 * window.innerWidth / 100))}px)`
+                : `translateY(-${currentSlide * window.innerHeight}px)`,
+              height: isMobile
+                ? `${images.length * (window.innerHeight - (61 * window.innerWidth / 100))}px`
+                : `${images.length * window.innerHeight}px`
+            }}
+          >
+            {images.map((image, index) => (
+              <div key={image.id || index} className="slide">
                 <img
-                  src={images[0].url}
-                  alt={images[0].title || '메인 이미지'}
+                  src={image.url}
+                  alt={image.title || `슬라이드 ${index + 1}`}
                 />
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>

@@ -5,15 +5,43 @@ import { deleteFileFromR2 } from './r2Service';
 export const getProjects = async () => {
   try {
     const projectsRef = collection(db, 'projects');
-    const q = query(projectsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(projectsRef);
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
-      detailImages: doc.data().detailImages || []
-    }));
+    const projects = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      
+      // 하위 호환성: detailImages가 있으면 detailMedia로 변환
+      let detailMedia = data.detailMedia || [];
+      if (data.detailImages && !data.detailMedia) {
+        detailMedia = data.detailImages.map(img => ({
+          type: 'image',
+          url: img.url,
+          order: img.order || 0
+        }));
+      }
+      
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        detailMedia: detailMedia
+      };
+    });
+
+    // order 필드로 정렬 (없으면 createdAt으로 정렬)
+    projects.sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      } else if (a.order !== undefined) {
+        return -1;
+      } else if (b.order !== undefined) {
+        return 1;
+      } else {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+
+    return projects;
   } catch (error) {
     console.error('프로젝트 데이터 가져오기 실패:', error);
     throw error;
@@ -25,10 +53,10 @@ export const addProject = async (projectData) => {
     const projectsRef = collection(db, 'projects');
     await addDoc(projectsRef, {
       ...projectData,
-      detailImages: projectData.detailImages.map((img, index) => ({
-        ...img,
+      detailMedia: projectData.detailMedia?.map((media, index) => ({
+        ...media,
         order: index
-      }))
+      })) || []
     });
   } catch (error) {
     console.error('프로젝트 추가 실패:', error);
@@ -36,17 +64,17 @@ export const addProject = async (projectData) => {
   }
 };
 
-export const updateProjectImages = async (projectId, detailImages) => {
+export const updateProjectImages = async (projectId, detailMedia) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
     await updateDoc(projectRef, {
-      detailImages: detailImages.map((img, index) => ({
-        ...img,
+      detailMedia: detailMedia.map((media, index) => ({
+        ...media,
         order: index
       }))
     });
   } catch (error) {
-    console.error('프로젝트 이미지 업데이트 실패:', error);
+    console.error('프로젝트 미디어 업데이트 실패:', error);
     throw error;
   }
 };
@@ -56,8 +84,8 @@ export const updateProject = async (projectId, projectData) => {
     const projectRef = doc(db, 'projects', projectId);
     await updateDoc(projectRef, {
       ...projectData,
-      detailImages: projectData.detailImages?.map((img, index) => ({
-        ...img,
+      detailMedia: projectData.detailMedia?.map((media, index) => ({
+        ...media,
         order: index
       })) || []
     });

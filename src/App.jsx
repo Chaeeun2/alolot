@@ -5,14 +5,16 @@ import MainPage from './components/MainPage';
 import About from './components/About';
 import Projects from './components/Projects';
 import ProjectDetail from './components/ProjectDetail';
-import Admin from './components/Admin';
 import AdminLayout from './components/layouts/AdminLayout';
 import ProjectManagement from './components/admin/ProjectManagement';
 import CategoryManagement from './components/admin/CategoryManagement';
 import MainPageManagement from './components/admin/MainPageManagement';
 import InfoManagement from './components/admin/InfoManagement';
+import Login from './components/admin/Login';
+import PrivateRoute from './components/PrivateRoute';
 import ScrollToTop from './components/ScrollToTop';
 import { BackgroundProvider } from './contexts/BackgroundContext';
+import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 
 // Error Boundary Component
@@ -41,9 +43,11 @@ class ErrorBoundary extends React.Component {
 // Admin page wrapper
 function AdminPage({ children }) {
   return (
-    <AdminLayout>
-      {children}
-    </AdminLayout>
+    <PrivateRoute>
+      <AdminLayout>
+        {children}
+      </AdminLayout>
+    </PrivateRoute>
   );
 }
 
@@ -90,29 +94,34 @@ function App() {
         v7_relativeSplatPath: true 
       }}
     >
-      <ScrollToTop />
-      <BackgroundProvider>
-        <ErrorBoundary>
-          <Routes>
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminPage><Admin /></AdminPage>} />
-            <Route path="/admin/projects" element={<AdminPage><ProjectManagement /></AdminPage>} />
-            <Route path="/admin/info" element={<AdminPage><InfoManagement /></AdminPage>} />
-            <Route path="/admin/categories" element={<AdminPage><CategoryManagement /></AdminPage>} />
-            <Route path="/admin/mainpage" element={<AdminPage><MainPageManagement /></AdminPage>} />
+      <AuthProvider>
+        <ScrollToTop />
+        <BackgroundProvider>
+          <ErrorBoundary>
+            <Routes>
+              {/* Login Route */}
+              <Route path="/login" element={<Login />} />
 
-            {/* Main Site Routes */}
-            <Route path="/" element={<Layout />}>
-              <Route index element={<MainPage />} />
-              <Route path="about" element={<About />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
-            </Route>
+              {/* Protected Admin Routes */}
+              <Route path="/admin" element={<Navigate to="/admin/info" replace />} />
+              <Route path="/admin/projects" element={<AdminPage><ProjectManagement /></AdminPage>} />
+              <Route path="/admin/info" element={<AdminPage><InfoManagement /></AdminPage>} />
+              <Route path="/admin/categories" element={<AdminPage><CategoryManagement /></AdminPage>} />
+              <Route path="/admin/mainpage" element={<AdminPage><MainPageManagement /></AdminPage>} />
 
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </ErrorBoundary>
-      </BackgroundProvider>
+              {/* Main Site Routes */}
+              <Route path="/" element={<Layout />}>
+                <Route index element={<MainPage />} />
+                <Route path="about" element={<About />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="projects/:id" element={<ProjectDetail />} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </ErrorBoundary>
+        </BackgroundProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

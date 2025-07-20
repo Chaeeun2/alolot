@@ -39,13 +39,15 @@
 
 .project-detail-main-image {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .project-detail-main-image img {
   width: 100%;
   height: auto;
   display: block;
+  object-fit: contain;
+  max-width: 100%;
 }
 
 .project-detail-info {
@@ -61,7 +63,7 @@
   word-break: keep-all;
 }
 
-.project-description {
+.project-detail-description {
   font-size: 20px;
   line-height: 1.5;
   font-family: Pretendard;
@@ -70,19 +72,21 @@
   margin: 0;
 }
 
-.detail-image {
-  overflow: hidden;
+.project-detail-image {
+  overflow: visible;
   margin-bottom: 5px;
 }
 
-.detail-image:last-child {
+.project-detail-image:last-child {
   margin-bottom: 0;
 }
 
-.detail-image img {
+.project-detail-image img {
   width: 100%;
   height: auto;
   display: block;
+  object-fit: contain;
+  max-width: 100%;
   transition: transform 0.3s ease;
 }
 
@@ -99,6 +103,44 @@
 
 .back-button:hover {
   background: #333;
+}
+
+/* 상세 미디어 (이미지 + 동영상) 스타일 */
+.project-detail-media {
+  width: 100%;
+}
+
+.project-detail-media-item {
+  overflow: visible;
+  margin-bottom: 5px;
+  border-radius: 0px;
+}
+
+.project-detail-media-item:last-child {
+  margin-bottom: 0;
+}
+
+.project-detail-media-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  max-width: 100%;
+  transition: transform 0.3s ease;
+}
+
+.project-detail-video {
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.project-detail-video:last-child {
+  margin-bottom: 0;
+}
+
+.project-detail-video iframe {
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
@@ -151,8 +193,12 @@
     font-size: 16px;
   }
 
-  .project-description {
+  .project-detail-description {
     font-size: 16px;
     margin-bottom: 25px;
+  }
+
+  .project-detail-video iframe {
+    height: 200px;
   }
 }

@@ -53,6 +53,8 @@
   color: inherit;
   display: block;
   transition: all 0.6s ease;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 /* 프로젝트 페이지에서의 메뉴 아이템 폰트 크기 조정 */
@@ -66,7 +68,7 @@
 }
 
 .menu-item:hover {
-  transform: translateX(5px);
+  transform: perspective(800px) rotateX(180deg);
 }
 
 .menu-center .menu-item:last-child {
@@ -78,8 +80,6 @@
     padding: 15px;
     width: 100%;
     height: 61vw;
-    /* 모바일 브라우저 viewport 정확성을 위한 fallback */
-    /* height: calc(35vh - env(safe-area-inset-top, 0px)); */
     border-right: none;
     border-bottom: 5px solid #000;
     justify-content: space-between;
@@ -92,7 +92,7 @@
   }
 
   .menu-item:hover {
-    transform: translateX(0px);
+    transform: perspective(800px) rotateX(180deg);
   }
 
   .menu-bottom {

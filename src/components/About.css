@@ -106,7 +106,8 @@
   .about-story,
   .contact,
   .another-projects,
-  .email {
+  .email,
+  .partners {
     margin-bottom: 35px;
   }
 }

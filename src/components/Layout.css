@@ -1,6 +1,7 @@
 .layout-container {
   display: flex;
   min-height: 100vh;
+  background-color: white;
 }
 
 .layout-content {
@@ -12,10 +13,17 @@
 .main-content {
   padding: 0;
   margin-left: 50%;
+  background-color: white;
+  min-height: 100vh;
 }
 
 @media (max-width: 768px) {
   .layout-content {
     margin-left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    margin-top: 61vw;
   }
 }

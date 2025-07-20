@@ -9,14 +9,11 @@ const Layout = () => {
   const { backgroundColor: contextBackgroundColor } = useBackground();
   
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const backgroundColor = isAdminRoute ? '#ffffff' : contextBackgroundColor;
+  const sideMenuBackgroundColor = isAdminRoute ? '#ffffff' : contextBackgroundColor;
 
   return (
-    <div 
-      className="layout-container"
-      style={{ backgroundColor }}
-    >
-      <SideMenu backgroundColor={backgroundColor} />
+    <div className="layout-container">
+      <SideMenu backgroundColor={sideMenuBackgroundColor} />
       <main className="main-content">
         <Outlet />
       </main>

@@ -52,7 +52,7 @@ const ProjectDetail = () => {
       <div className="project-detail-container">
         <div className="project-detail-header">
           <h1>{project.title}</h1>
-          <p className="project-description">{project.description}</p>
+          <p className="project-detail-description">{project.description}</p>
         </div>
 
         <div className="project-detail-main-image">
@@ -67,13 +67,37 @@ const ProjectDetail = () => {
           </div>
           </div>
 
-          {project.detailImages && project.detailImages.length > 0 && (
+          {project.detailMedia && project.detailMedia.length > 0 && (
+            <div className="project-detail-media">
+              {project.detailMedia.map((media, index) => (
+                <div key={index} className="project-detail-media-item">
+                  {media.type === 'image' ? (
+                    <img src={media.url} alt={`상세 이미지 ${index + 1}`} />
+                  ) : media.type === 'video' ? (
+                    <div className="project-detail-video">
+                      <iframe
+                        src={media.url}
+                        width="100%"
+                        height="400"
+                        frameBorder="0"
+                        allowFullScreen
+                        title={`동영상 ${index + 1}`}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 하위 호환성을 위한 기존 detailImages 지원 */}
+          {project.detailImages && project.detailImages.length > 0 && !project.detailMedia && (
             <div className="project-detail-images">
               {project.detailImages.map((image, index) => (
-                  <div key={index} className="detail-image">
-                    <img src={image.url} alt={`상세 이미지 ${index + 1}`} />
-                  </div>
-                ))}
+                <div key={index} className="project-detail-image">
+                  <img src={image.url} alt={`상세 이미지 ${index + 1}`} />
+                </div>
+              ))}
             </div>
           )}
         </div>

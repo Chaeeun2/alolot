@@ -41,7 +41,7 @@
   display: flex;
   flex-direction: column; /* 세로 방향으로 슬라이드 나열 */
   transition: transform 1s ease;
-  height: 100%; /* 이 값은 JS에 의해 동적으로 결정되어야 더 좋음 */
+  /* height는 JavaScript에서 동적으로 설정됨 */
 }
 
 .slide {

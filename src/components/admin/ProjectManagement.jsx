@@ -3,7 +3,10 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { addProject, getProjects, deleteProject, updateProjectImages, updateProject } from '../../services/projectService';
 import { getCategories } from '../../services/categoryService';
 import { getPresignedUrl } from '../../services/r2Service';
+import { convertToEmbedUrl, isValidVideoUrl, detectVideoPlatform } from '../../utils/videoUtils';
 import './ProjectManagement.css';
+import { writeBatch, doc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const ProjectManagement = () => {
   const [projects, setProjects] = useState([]);
@@ -17,7 +20,7 @@ const ProjectManagement = () => {
     description: '',
     thumbnailUrl: '',
     mainImageUrl: '',
-    detailImages: [],
+    detailMedia: [], // 이미지와 동영상을 함께 관리
     categories: []
   });
   const [newProject, setNewProject] = useState({
@@ -26,7 +29,7 @@ const ProjectManagement = () => {
     description: '',
     thumbnailUrl: '',
     mainImageUrl: '',
-    detailImages: [],
+    detailMedia: [], // 이미지와 동영상을 함께 관리
     categories: []
   });
 
@@ -49,6 +52,24 @@ const ProjectManagement = () => {
   const [editThumbnailPreview, setEditThumbnailPreview] = useState('');
   const [editMainImagePreview, setEditMainImagePreview] = useState('');
   const [editDetailImagePreviews, setEditDetailImagePreviews] = useState([]);
+
+  // 동영상 URL 상태 추가
+  const [videoUrl, setVideoUrl] = useState('');
+  const [editVideoUrl, setEditVideoUrl] = useState('');
+
+  // YouTube 비디오 ID 추출 함수
+  const extractYouTubeVideoId = (url) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Vimeo 비디오 ID 추출 함수
+  const extractVimeoVideoId = (url) => {
+    const regExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -109,26 +130,48 @@ const ProjectManagement = () => {
   };
 
   const handleImagePreview = (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    if (type === 'detail') {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      switch (type) {
-        case 'thumbnail':
-          setThumbnailPreview(reader.result);
-          setThumbnailFile(file);
-          break;
-        case 'main':
-          setMainImagePreview(reader.result);
-          setMainImageFile(file);
-          break;
-        default:
-          console.warn('Unknown image type:', type);
-          break;
-      }
-    };
-    reader.readAsDataURL(file);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // detailMedia 배열에만 추가
+          setNewProject(prev => ({
+            ...prev,
+            detailMedia: [...prev.detailMedia, {
+              type: 'image',
+              url: reader.result, // 임시 미리보기 URL
+              file: file,
+              order: prev.detailMedia.length
+            }]
+          }));
+        };
+        reader.readAsDataURL(file);
+      });
+    } else {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        switch (type) {
+          case 'thumbnail':
+            setThumbnailPreview(reader.result);
+            setThumbnailFile(file);
+            break;
+          case 'main':
+            setMainImagePreview(reader.result);
+            setMainImageFile(file);
+            break;
+          default:
+            console.warn('Unknown image type:', type);
+            break;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDetailImageDelete = (index) => {
@@ -136,47 +179,131 @@ const ProjectManagement = () => {
     setDetailImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 동영상 URL 추가 함수
+  const handleAddVideo = () => {
+    if (!videoUrl.trim()) {
+      alert('동영상 URL을 입력해주세요.');
+      return;
+    }
+
+    if (!isValidVideoUrl(videoUrl)) {
+      alert('유효한 유튜브 또는 비메오 URL을 입력해주세요.');
+      return;
+    }
+
+    const embedUrl = convertToEmbedUrl(videoUrl);
+    if (!embedUrl) {
+      alert('URL을 변환할 수 없습니다. 올바른 URL인지 확인해주세요.');
+      return;
+    }
+
+    const videoData = {
+      type: 'video',
+      url: embedUrl,
+      originalUrl: videoUrl,
+      platform: detectVideoPlatform(videoUrl),
+      order: newProject.detailMedia.length
+    };
+
+    setNewProject(prev => ({
+      ...prev,
+      detailMedia: [...prev.detailMedia, videoData]
+    }));
+
+    setVideoUrl('');
+  };
+
+  // 수정 모드에서 동영상 URL 추가 함수
+  const handleEditAddVideo = () => {
+    if (!editVideoUrl.trim()) {
+      alert('동영상 URL을 입력해주세요.');
+      return;
+    }
+
+    let embedUrl = '';
+    let platform = '';
+
+    // YouTube URL 처리
+    if (editVideoUrl.includes('youtube.com') || editVideoUrl.includes('youtu.be')) {
+      const videoId = extractYouTubeVideoId(editVideoUrl);
+      if (videoId) {
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        platform = 'YouTube';
+      }
+    }
+    // Vimeo URL 처리
+    else if (editVideoUrl.includes('vimeo.com')) {
+      const videoId = extractVimeoVideoId(editVideoUrl);
+      if (videoId) {
+        embedUrl = `https://player.vimeo.com/video/${videoId}`;
+        platform = 'Vimeo';
+      }
+    }
+
+    if (!embedUrl) {
+      alert('지원하지 않는 동영상 URL입니다. YouTube 또는 Vimeo URL을 입력해주세요.');
+      return;
+    }
+
+    const newVideo = {
+      type: 'video',
+      url: embedUrl,
+      platform: platform,
+      originalUrl: editVideoUrl
+    };
+
+    setEditProject(prev => ({
+      ...prev,
+      detailMedia: [...(prev.detailMedia || []), newVideo]
+    }));
+
+    setEditVideoUrl('');
+  };
+
+  // 미디어 아이템 삭제 함수 (이미지와 동영상 모두 지원)
+  const handleDetailMediaDelete = (index) => {
+    setNewProject(prev => ({
+      ...prev,
+      detailMedia: prev.detailMedia.filter((_, i) => i !== index)
+    }));
+  };
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
 
     const sourceDroppableId = result.source.droppableId;
 
-    // 새 프로젝트 추가 시 상세 이미지 순서 변경
-    if (sourceDroppableId === 'new-project-detail-images') {
-      const items = Array.from(detailImagePreviews);
-      const files = Array.from(detailImageFiles);
+    // 새 프로젝트 추가 시 상세 미디어 순서 변경
+    if (sourceDroppableId === 'new-project-detail-media') {
+      const items = Array.from(newProject.detailMedia);
+      const [reorderedItem] = items.splice(result.source.index, 1);
+      items.splice(result.destination.index, 0, reorderedItem);
       
-      // 미리보기 배열 순서 변경
-      const [reorderedPreview] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedPreview);
-      
-      // 파일 배열 순서 변경
-      const [reorderedFile] = files.splice(result.source.index, 1);
-      files.splice(result.destination.index, 0, reorderedFile);
-      
-      setDetailImagePreviews(items);
-      setDetailImageFiles(files);
+      setNewProject(prev => ({
+        ...prev,
+        detailMedia: items
+      }));
       return;
     }
 
     // 모달에서 편집 중인 경우
     if (showEditModal && editingProjectId) {
-      // editProject의 detailImages 순서 변경
-      const items = Array.from(editProject.detailImages);
+      // editProject의 detailMedia 순서 변경
+      const items = Array.from(editProject.detailMedia);
       const [reorderedItem] = items.splice(result.source.index, 1);
       items.splice(result.destination.index, 0, reorderedItem);
 
       // editProject 상태 업데이트
       setEditProject(prev => ({
         ...prev,
-        detailImages: items
+        detailMedia: items
       }));
 
       // 전체 projects 배열도 업데이트 (UI 일관성을 위해)
       setProjects(prevProjects =>
         prevProjects.map(p =>
           p.id === editingProjectId
-            ? { ...p, detailImages: items }
+            ? { ...p, detailMedia: items }
             : p
         )
       );
@@ -192,16 +319,16 @@ const ProjectManagement = () => {
       const projectId = result.source.droppableId.replace('droppable-', '');
       const project = projects.find(p => p.id === projectId);
       
-      if (!project || !project.detailImages) return;
+      if (!project || !project.detailMedia) return;
 
-      const items = Array.from(project.detailImages);
+      const items = Array.from(project.detailMedia);
       const [reorderedItem] = items.splice(result.source.index, 1);
       items.splice(result.destination.index, 0, reorderedItem);
 
       setProjects(prevProjects =>
         prevProjects.map(p =>
           p.id === projectId
-            ? { ...p, detailImages: items }
+            ? { ...p, detailMedia: items }
             : p
         )
       );
@@ -219,11 +346,30 @@ const ProjectManagement = () => {
       const thumbnailUrl = await getPresignedUrl(thumbnailFile);
       const mainImageUrl = await getPresignedUrl(mainImageFile);
       
-      const detailImagesPromises = detailImageFiles.map(async (file) => {
-        const url = await getPresignedUrl(file);
-        return { url, order: detailImageFiles.indexOf(file) };
-      });
-      const detailImages = await Promise.all(detailImagesPromises);
+      // detailMedia 처리 (이미지와 동영상 모두)
+      const detailMediaProcessed = await Promise.all(
+        newProject.detailMedia.map(async (media, index) => {
+          if (media.type === 'image' && media.file) {
+            // 이미지인 경우 업로드
+            const url = await getPresignedUrl(media.file);
+            return {
+              type: 'image',
+              url,
+              order: index
+            };
+          } else if (media.type === 'video') {
+            // 동영상인 경우 embed URL 그대로 사용
+            return {
+              type: 'video',
+              url: media.url,
+              originalUrl: media.originalUrl,
+              platform: media.platform,
+              order: index
+            };
+          }
+          return media;
+        })
+      );
 
       const projectData = {
         title: newProject.title,
@@ -231,7 +377,7 @@ const ProjectManagement = () => {
         description: newProject.description,
         thumbnailUrl,
         mainImageUrl,
-        detailImages,
+        detailMedia: detailMediaProcessed,
         categories: newProject.categories,
         createdAt: new Date()
       };
@@ -245,15 +391,14 @@ const ProjectManagement = () => {
         description: '',
         thumbnailUrl: '',
         mainImageUrl: '',
-        detailImages: [],
+        detailMedia: [],
         categories: []
       });
       setThumbnailPreview('');
       setMainImagePreview('');
-      setDetailImagePreviews([]);
       setThumbnailFile(null);
       setMainImageFile(null);
-      setDetailImageFiles([]);
+      setVideoUrl('');
       
       fetchProjects();
     } catch (error) {
@@ -280,14 +425,14 @@ const ProjectManagement = () => {
       description: project.description,
       thumbnailUrl: project.thumbnailUrl,
       mainImageUrl: project.mainImageUrl,
-      detailImages: project.detailImages || [],
+      detailMedia: project.detailMedia || [],
       categories: project.categories || []
     });
     
     // 기존 이미지 미리보기 설정
     setEditThumbnailPreview(project.thumbnailUrl);
     setEditMainImagePreview(project.mainImageUrl);
-    setEditDetailImagePreviews(project.detailImages?.map(img => img.url) || []);
+    setEditDetailImagePreviews(project.detailMedia?.map(media => media.url) || []);
     
     // 파일 상태 초기화
     setEditThumbnailFile(null);
@@ -307,7 +452,7 @@ const ProjectManagement = () => {
       description: '',
       thumbnailUrl: '',
       mainImageUrl: '',
-      detailImages: [],
+      detailMedia: [],
       categories: []
     });
     setEditThumbnailPreview('');
@@ -336,6 +481,18 @@ const ProjectManagement = () => {
         reader.onloadend = () => {
           setEditDetailImagePreviews(prev => [...prev, reader.result]);
           setEditDetailImageFiles(prev => [...prev, file]);
+          
+          // editProject.detailMedia에도 임시 항목 추가 (업로드 후 실제 URL로 교체됨)
+          setEditProject(prev => ({
+            ...prev,
+            detailMedia: [...prev.detailMedia, {
+              type: 'image',
+              url: reader.result, // 임시 미리보기 URL
+              file: file,
+              order: prev.detailMedia.length,
+              isNew: true // 새로 추가된 항목임을 표시
+            }]
+          }));
         };
         reader.readAsDataURL(file);
       });
@@ -363,25 +520,61 @@ const ProjectManagement = () => {
     }
   };
 
-  const handleEditDetailImageDelete = (index, event) => {
+  const handleEditDetailMediaDelete = (index, event) => {
     // 이벤트 전파 방지 (드래그 방해하지 않도록)
     if (event) {
       event.stopPropagation();
       event.preventDefault();
     }
     
-    setEditDetailImagePreviews(prev => prev.filter((_, i) => i !== index));
+    // editProject.detailMedia에서 해당 항목 삭제
+    setEditProject(prev => ({
+      ...prev,
+      detailMedia: prev.detailMedia.filter((_, i) => i !== index)
+    }));
     
-    // 기존 이미지를 삭제하는 경우
-    if (index < editProject.detailImages.length) {
-      setEditProject(prev => ({
-        ...prev,
-        detailImages: prev.detailImages.filter((_, i) => i !== index)
-      }));
-    } else {
-      // 새로 추가된 파일을 삭제하는 경우  
-      const fileIndex = index - editProject.detailImages.length;
-      setEditDetailImageFiles(prev => prev.filter((_, i) => i !== fileIndex));
+    // 새로 추가된 이미지인 경우에만 미리보기와 파일 상태 업데이트
+    const deletedMedia = editProject.detailMedia[index];
+    if (deletedMedia && deletedMedia.isNew && deletedMedia.type === 'image') {
+      setEditDetailImagePreviews(prev => {
+        const newPreviews = [];
+        let previewIndex = 0;
+        
+        for (let i = 0; i < editProject.detailMedia.length; i++) {
+          if (i !== index) {
+            if (editProject.detailMedia[i].isNew && editProject.detailMedia[i].type === 'image') {
+              newPreviews.push(prev[previewIndex]);
+              previewIndex++;
+            }
+          } else {
+            if (editProject.detailMedia[i].isNew && editProject.detailMedia[i].type === 'image') {
+              previewIndex++;
+            }
+          }
+        }
+        
+        return newPreviews;
+      });
+      
+      setEditDetailImageFiles(prev => {
+        const newFiles = [];
+        let fileIndex = 0;
+        
+        for (let i = 0; i < editProject.detailMedia.length; i++) {
+          if (i !== index) {
+            if (editProject.detailMedia[i].isNew && editProject.detailMedia[i].type === 'image') {
+              newFiles.push(prev[fileIndex]);
+              fileIndex++;
+            }
+          } else {
+            if (editProject.detailMedia[i].isNew && editProject.detailMedia[i].type === 'image') {
+              fileIndex++;
+            }
+          }
+        }
+        
+        return newFiles;
+      });
     }
   };
 
@@ -390,7 +583,7 @@ const ProjectManagement = () => {
     try {
       let thumbnailUrl = editProject.thumbnailUrl;
       let mainImageUrl = editProject.mainImageUrl;
-      let detailImages = [...editProject.detailImages];
+      let detailMedia = [...editProject.detailMedia];
 
       // 새 썸네일 이미지가 있으면 업로드
       if (editThumbnailFile) {
@@ -402,15 +595,26 @@ const ProjectManagement = () => {
         mainImageUrl = await getPresignedUrl(editMainImageFile);
       }
 
-      // 새 상세 이미지들이 있으면 업로드
-      if (editDetailImageFiles.length > 0) {
-        const newDetailImagesPromises = editDetailImageFiles.map(async (file) => {
-          const url = await getPresignedUrl(file);
-          return { url, order: detailImages.length + editDetailImageFiles.indexOf(file) };
-        });
-        const newDetailImages = await Promise.all(newDetailImagesPromises);
-        detailImages = [...detailImages, ...newDetailImages];
-      }
+      // 새로 추가된 상세 이미지들을 실제 URL로 교체
+      const updatedDetailMedia = await Promise.all(
+        detailMedia.map(async (media, index) => {
+          if (media.isNew && media.file) {
+            // 새로 추가된 이미지인 경우 실제 URL로 업로드
+            const url = await getPresignedUrl(media.file);
+            return {
+              type: 'image',
+              url: url,
+              order: index
+            };
+          } else {
+            // 기존 이미지인 경우 그대로 유지
+            return {
+              ...media,
+              order: index
+            };
+          }
+        })
+      );
 
       const projectData = {
         title: editProject.title,
@@ -418,7 +622,7 @@ const ProjectManagement = () => {
         description: editProject.description,
         thumbnailUrl,
         mainImageUrl,
-        detailImages,
+        detailMedia: updatedDetailMedia,
         categories: editProject.categories
       };
 
@@ -431,19 +635,51 @@ const ProjectManagement = () => {
     }
   };
 
+  // 프로젝트 목록 순서 변경 핸들러
+  const handleProjectListDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(projects);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // 순서 업데이트 (order 필드 추가)
+    const updatedProjects = items.map((project, index) => ({
+      ...project,
+      order: index
+    }));
+
+    setProjects(updatedProjects);
+
+    // Firestore에 순서 업데이트
+    try {
+      const batch = writeBatch(db);
+      updatedProjects.forEach((project) => {
+        const projectRef = doc(db, 'projects', project.id);
+        batch.update(projectRef, { order: project.order });
+      });
+      await batch.commit();
+      console.log('프로젝트 순서가 업데이트되었습니다.');
+    } catch (error) {
+      console.error('프로젝트 순서 업데이트 실패:', error);
+    }
+  };
+
   if (loading) {
     return <div className="admin-loading">로딩 중...</div>;
   }
 
   return (
     <div className="project-management">
-      <h1>프로젝트 관리</h1>
+      <div className="project-header">
+        <h1>프로젝트 관리</h1>
+      </div>
 
       {/* 새 프로젝트 추가 폼 */}
-      <div className="admin-form-section">
+      <div className="project-section">
         <h2>새 프로젝트 추가</h2>
         <form onSubmit={handleSubmit} className="admin-form">
-          <div className="form-group">
+          <div className="project-form-group">
             <label htmlFor="title">프로젝트 제목</label>
             <input
               type="text"
@@ -454,8 +690,21 @@ const ProjectManagement = () => {
               required
             />
           </div>
+
+                    <div className="project-form-group">
+            <label htmlFor="description">프로젝트 간단 설명</label>
+            <input
+              type="text"
+              id="description"
+              name="description"
+              value={newProject.description}
+              onChange={handleInputChange}
+              required
+              placeholder="웹, 2025, 클라이언트"
+            />
+          </div>
           
-          <div className="form-group">
+          <div className="project-form-group">
             <label htmlFor="detail">프로젝트 상세 설명</label>
             <textarea
               id="detail"
@@ -466,19 +715,8 @@ const ProjectManagement = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">프로젝트 간단 설명</label>
-            <input
-              type="text"
-              id="description"
-              name="description"
-              value={newProject.description}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
 
-          <div className="form-group">
+          <div className="project-form-group">
             <label>카테고리 선택</label>
             <div className="categories-selection">
               {categories.map((category) => (
@@ -502,26 +740,9 @@ const ProjectManagement = () => {
                 </label>
               ))}
             </div>
-            <div className="selected-categories">
-              <strong>선택된 카테고리:</strong>
-              <div className="categories-display">
-                {newProject.categories.map((cat, index) => (
-                  <span 
-                    key={index} 
-                    className="selected-category"
-                    style={{ 
-                      backgroundColor: 'black',
-                      color: cat.color || '#007bff'
-                    }}
-                  >
-                    {cat.name}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <div className="form-group">
+          <div className="project-form-group">
             <label htmlFor="thumbnail">썸네일 이미지</label>
             <input
               type="file"
@@ -537,7 +758,7 @@ const ProjectManagement = () => {
             )}
           </div>
 
-          <div className="form-group">
+          <div className="project-form-group">
             <label htmlFor="mainImage">메인 이미지</label>
             <input
               type="file"
@@ -553,7 +774,7 @@ const ProjectManagement = () => {
             )}
           </div>
 
-          <div className="form-group">
+          <div className="project-form-group">
             <label htmlFor="detailImages">상세 이미지들 (여러 장 한번에 선택 가능)</label>
             <input
               type="file"
@@ -562,41 +783,66 @@ const ProjectManagement = () => {
               onChange={(e) => handleImagePreview(e, 'detail')}
               multiple
             />
-            {detailImagePreviews.length > 0 && (
-              <div className="detail-images-section">
-                <h4>상세 이미지 순서 조정</h4>
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable
-                    droppableId="new-project-detail-images"
-                    direction="horizontal"
-                    isDropDisabled={false}
-                    isCombineEnabled={false}
-                  >
-                    {(provided, snapshot) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className={`detail-images-container ${
-                          snapshot.isDraggingOver ? 'dragging-over' : ''
-                        }`}
-                      >
-                        {detailImagePreviews.map((preview, index) => (
-                          <Draggable
-                            key={`new-image-${index}`}
-                            draggableId={`new-image-${index}`}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`detail-image-item ${
-                                  snapshot.isDragging ? 'dragging' : ''
-                                }`}
-                              >
+          </div>
+
+          {/* 동영상 URL 추가 */}
+          <div className="project-form-group">
+            <label htmlFor="videoUrl">동영상 URL 추가 (유튜브/비메오)</label>
+            <div className="video-input-container">
+              <input
+                type="url"
+                id="videoUrl"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... 또는 https://vimeo.com/..."
+              />
+              <button
+                type="button"
+                onClick={handleAddVideo}
+                className="add-video-button"
+              >
+                동영상 추가
+              </button>
+            </div>
+          </div>
+
+          {/* 상세 미디어 (이미지 + 동영상) 순서 조정 */}
+          {newProject.detailMedia.length > 0 && (
+            <div className="admin-detail-media-section">
+              <h4>상세 미디어 순서 조정</h4>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable
+                  droppableId="new-project-detail-media"
+                  direction="horizontal"
+                  isDropDisabled={false}
+                  isCombineEnabled={false}
+                >
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`admin-detail-media-container ${
+                        snapshot.isDraggingOver ? 'dragging-over' : ''
+                      }`}
+                    >
+                      {newProject.detailMedia.map((media, index) => (
+                        <Draggable
+                          key={`new-media-${index}`}
+                          draggableId={`new-media-${index}`}
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`admin-detail-media-item ${
+                                snapshot.isDragging ? 'dragging' : ''
+                              }`}
+                            >
+                              {media.type === 'image' ? (
                                 <img 
-                                  src={preview} 
+                                  src={media.url} 
                                   alt={`상세 이미지 ${index + 1}`}
                                   style={{
                                     width: '100px',
@@ -604,61 +850,116 @@ const ProjectManagement = () => {
                                     objectFit: 'cover'
                                   }}
                                 />
-                                <button
-                                  type="button"
-                                  className="delete-image-button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    handleDetailImageDelete(index);
-                                  }}
-                                >
-                                  삭제
-                                </button>
-                                <div style={{ textAlign: 'center', marginTop: '4px' }}>
-                                  {index + 1}
+                              ) : (
+                                <div className="video-preview">
+                                  <iframe
+                                    src={media.url}
+                                    width="100"
+                                    height="75"
+                                    frameBorder="0"
+                                    allowFullScreen
+                                    title={`동영상 ${index + 1}`}
+                                  />
+                                  <div className="video-info">
+                                    <span className="video-platform">{media.platform}</span>
+                                  </div>
                                 </div>
+                              )}
+                              <button
+                                type="button"
+                                className="delete-media-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleDetailMediaDelete(index);
+                                }}
+                              >
+                                삭제
+                              </button>
+                              <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                                {index + 1}
                               </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </div>
-            )}
-          </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </div>
+          )}
 
           <button type="submit" className="submit-button">프로젝트 추가</button>
         </form>
       </div>
 
       {/* 프로젝트 목록 */}
-      <div className="admin-list-section">
-        <h2>프로젝트 목록</h2>
-        <div className="project-list-simple">
-          {projects.map((project) => (
-            <div key={project.id} className="project-list-item">
-              <span className="project-title">{project.title}</span>
-              <div className="project-actions">
-                <button
-                  className="edit-button"
-                  onClick={() => handleEditStart(project)}
-                >
-                  수정
-                </button>
-                <button
-                  className="delete-button"
-                  onClick={() => handleDelete(project.id)}
-                >
-                  삭제
-                </button>
+      <div className="project-section">
+        <h2>프로젝트 목록 (드래그하여 순서 변경)</h2>
+        <DragDropContext onDragEnd={handleProjectListDragEnd}>
+          <Droppable droppableId="project-list">
+            {(provided, snapshot) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className={`project-list-simple ${
+                  snapshot.isDraggingOver ? 'dragging-over' : ''
+                }`}
+              >
+                {projects.map((project, index) => (
+                  <Draggable key={project.id} draggableId={project.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`project-list-item ${
+                          snapshot.isDragging ? 'dragging' : ''
+                        }`}
+                      >
+                        <div className="project-thumbnail">
+                          {project.thumbnailUrl ? (
+                            <img 
+                              src={project.thumbnailUrl} 
+                              alt={`${project.title} 썸네일`}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className="thumbnail-placeholder" style={{ display: project.thumbnailUrl ? 'none' : 'flex' }}>
+                            📷
+                          </div>
+                        </div>
+                        <div className="project-info">
+                          <span className="project-title">{project.title}</span>
+                        </div>
+                        <div className="project-actions">
+                          <button
+                            className="edit-button"
+                            onClick={() => handleEditStart(project)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDelete(project.id)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
 
       {/* 수정 모달 */}
@@ -671,7 +972,7 @@ const ProjectManagement = () => {
             </div>
             
             <form onSubmit={handleEditSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-title">프로젝트 제목</label>
                 <input
                   type="text"
@@ -683,7 +984,7 @@ const ProjectManagement = () => {
                 />
               </div>
               
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-detail">프로젝트 상세 설명</label>
                 <textarea
                   id="edit-detail"
@@ -695,7 +996,7 @@ const ProjectManagement = () => {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-description">프로젝트 간단 설명</label>
                 <input
                   type="text"
@@ -707,7 +1008,7 @@ const ProjectManagement = () => {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="project-form-group">
                 <label>카테고리 선택</label>
                 <div className="categories-selection">
                   {categories.map((category) => (
@@ -731,26 +1032,9 @@ const ProjectManagement = () => {
                     </label>
                   ))}
                 </div>
-                <div className="selected-categories">
-                  <strong>선택된 카테고리:</strong>
-                  <div className="categories-display">
-                    {editProject.categories.map((cat, index) => (
-                      <span 
-                        key={index} 
-                        className="selected-category"
-                        style={{ 
-                          backgroundColor: 'black',
-                          color: cat.color || '#007bff'
-                        }}
-                      >
-                        {cat.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               </div>
 
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-thumbnail">썸네일 이미지</label>
                 <input
                   type="file"
@@ -765,7 +1049,7 @@ const ProjectManagement = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-mainImage">메인 이미지</label>
                 <input
                   type="file"
@@ -780,7 +1064,7 @@ const ProjectManagement = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="project-form-group">
                 <label htmlFor="edit-detailImages">상세 이미지들 (여러 장 한번에 선택 가능)</label>
                 <input
                   type="file"
@@ -789,14 +1073,31 @@ const ProjectManagement = () => {
                   onChange={(e) => handleEditImagePreview(e, 'detail')}
                   multiple
                 />
-                <div className="detail-images-preview">
-                  {editDetailImagePreviews.map((preview, index) => (
-                    <div key={index} className="detail-image-item">
-                      <img src={preview} alt={`상세 이미지 ${index + 1}`} />
+                <div className="admin-detail-images-preview">
+                  {editProject.detailMedia.map((media, index) => (
+                    <div key={index} className="admin-detail-image-item">
+                      {media.type === 'image' ? (
+                        <img src={media.url} alt={`상세 이미지 ${index + 1}`} />
+                      ) : media.type === 'video' ? (
+                        <div className="video-preview">
+                          <iframe
+                            src={media.url}
+                            title={`동영상 ${index + 1}`}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            style={{ width: '100px', height: '100px' }}
+                          />
+                        </div>
+                      ) : null}
+                      <div className="media-info">
+                        <span className="media-type">{media.type === 'image' ? '이미지' : '동영상'}</span>
+                        {media.isNew && <span className="new-badge">새로 추가</span>}
+                      </div>
                       <button
                         type="button"
                         className="delete-image-button"
-                        onClick={(e) => handleEditDetailImageDelete(index, e)}
+                        onClick={(e) => handleEditDetailMediaDelete(index, e)}
                       >
                         삭제
                       </button>
@@ -805,8 +1106,29 @@ const ProjectManagement = () => {
                 </div>
               </div>
 
-              {editProject.detailImages && editProject.detailImages.length > 0 && (
-                <div className="detail-images-section">
+              {/* 동영상 URL 추가 */}
+              <div className="project-form-group">
+                <label htmlFor="edit-video-url">동영상 URL 추가 (YouTube, Vimeo)</label>
+                <div className="video-url-input">
+                  <input
+                    type="url"
+                    id="edit-video-url"
+                    value={editVideoUrl}
+                    onChange={(e) => setEditVideoUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... 또는 https://vimeo.com/..."
+                  />
+                  <button
+                    type="button"
+                    className="add-video-button"
+                    onClick={handleEditAddVideo}
+                  >
+                    동영상 추가
+                  </button>
+                </div>
+              </div>
+
+              {editProject.detailMedia && editProject.detailMedia.length > 0 && (
+                <div className="admin-detail-images-section">
                   <h4>기존 상세 이미지 순서 조정</h4>
                   <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable
@@ -819,14 +1141,14 @@ const ProjectManagement = () => {
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className={`detail-images-container ${
+                          className={`admin-detail-images-container ${
                             snapshot.isDraggingOver ? 'dragging-over' : ''
                           }`}
                         >
-                          {editProject.detailImages.map((image, index) => (
+                          {editProject.detailMedia.map((media, index) => (
                             <Draggable
-                              key={`image-${index}`}
-                              draggableId={`image-${index}`}
+                              key={`media-${index}`}
+                              draggableId={`media-${index}`}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -834,12 +1156,12 @@ const ProjectManagement = () => {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`detail-image-item ${
+                                  className={`admin-detail-image-item ${
                                     snapshot.isDragging ? 'dragging' : ''
                                   }`}
                                 >
                                   <img
-                                    src={image.url}
+                                    src={media.url}
                                     alt={`상세 이미지 ${index + 1}`}
                                     style={{
                                       width: '100px',
@@ -847,9 +1169,6 @@ const ProjectManagement = () => {
                                       objectFit: 'cover'
                                     }}
                                   />
-                                  <div style={{ textAlign: 'center', marginTop: '4px' }}>
-                                    {index + 1}
-                                  </div>
                                 </div>
                               )}
                             </Draggable>

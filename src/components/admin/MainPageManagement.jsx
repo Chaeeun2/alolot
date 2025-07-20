@@ -107,15 +107,12 @@ const MainPageManagement = () => {
 
   return (
     <div className="mainpage-management">
-      <h1>메인페이지 관리</h1>
+      <div className="mainpage-header">
+        <h1>메인페이지 관리</h1>
+      </div>
       
-      <div className="upload-section">
+      <div className="mainpage-section">
         <h2>새 이미지 업로드</h2>
-        <div className="upload-info">
-          <p>메인페이지 슬라이드에 표시될 이미지를 업로드하세요.</p>
-          <p>권장 이미지 크기: 1920x1080px 이상</p>
-          <p>업로드 후 드래그 앤 드롭으로 순서를 변경할 수 있습니다.</p>
-        </div>
         
         <div className="file-upload-container">
           <input
@@ -129,7 +126,7 @@ const MainPageManagement = () => {
         </div>
       </div>
 
-      <div className="current-images-section">
+      <div className="mainpage-section">
         <h2>현재 메인 이미지들 ({mainImages.length}개)</h2>
         {error && <div className="error-message">{error}</div>}
         
@@ -160,16 +157,9 @@ const MainPageManagement = () => {
                           {...provided.dragHandleProps}
                           className={`image-item ${snapshot.isDragging ? 'dragging' : ''}`}
                         >
-                          <div className="image-order">{index + 1}</div>
                           <img src={image.url} alt={image.title} />
-                          <div className="image-info">
-                            <p className="image-title">{image.title}</p>
-                            <p className="image-date">
-                              {image.createdAt?.toLocaleDateString()}
-                            </p>
-                          </div>
                           <button
-                            className="delete-button"
+                            className="img-delete-button"
                             onClick={(event) => handleDeleteImage(image.id, event)}
                             title="이미지 삭제"
                           >
@@ -185,17 +175,6 @@ const MainPageManagement = () => {
             </Droppable>
           </DragDropContext>
         )}
-      </div>
-
-      <div className="instructions-section">
-        <h2>사용 안내</h2>
-        <ul>
-          <li>메인페이지에서 슬라이드로 표시될 이미지들을 관리할 수 있습니다.</li>
-          <li>드래그 앤 드롭으로 이미지 순서를 변경하세요.</li>
-          <li>× 버튼을 클릭하여 개별 이미지를 삭제할 수 있습니다.</li>
-          <li>업로드 가능한 형식: JPG, PNG, GIF</li>
-          <li>최대 파일 크기: 10MB</li>
-        </ul>
       </div>
     </div>
   );

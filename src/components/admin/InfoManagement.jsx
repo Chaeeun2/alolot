@@ -83,7 +83,22 @@ const InfoManagement = () => {
 
   return (
     <div className="info-management">
-      <h1>정보 관리</h1>
+      <div className="info-header">
+        <h1>정보 관리</h1>
+                {/* 저장 버튼 */}
+        <div className="save-section">
+          <button 
+            onClick={handleSave} 
+            className="save-button"
+            disabled={saving}
+          >
+            {saving ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      </div>
+      
+
+
       <div className="info-management-content">
         
         {/* 스튜디오 소개 */}
@@ -128,8 +143,8 @@ const InfoManagement = () => {
         {/* 수록되지 않은 프로젝트 */}
         <section className="info-section">
           <h2>수록되지 않은 프로젝트</h2>
-          <div className="projects-form">
-            <div className="add-project">
+          <div className="noprojects-form">
+            <div className="add-noproject">
               <input
                 type="text"
                 value={newProject}
@@ -141,14 +156,14 @@ const InfoManagement = () => {
                 추가
               </button>
             </div>
-            <div className="projects-list">
+            <div className="noprojects-list">
               {aboutData.anotherProjects.map((project, index) => (
-                <div key={index} className="project-item">
+                <div key={index} className="noproject-item">
                   <input
                     type="text"
                     value={project}
                     onChange={(e) => handleProjectEdit(index, e.target.value)}
-                    className="project-input"
+                    className="noproject-input"
                   />
                   <button 
                     onClick={() => handleProjectDelete(index)}
@@ -173,17 +188,6 @@ const InfoManagement = () => {
             rows={4}
           />
         </section>
-
-        {/* 저장 버튼 */}
-        <div className="save-section">
-          <button 
-            onClick={handleSave} 
-            className="save-button"
-            disabled={saving}
-          >
-            {saving ? '저장 중...' : '저장'}
-          </button>
-        </div>
       </div>
     </div>
   );

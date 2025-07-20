@@ -144,9 +144,9 @@ function CategoryManagement() {
 
   return (
     <div className="category-management">
-      <h1>카테고리 관리</h1>
+      <div className="category-header"><h1>카테고리 관리</h1></div>
       
-      <div className="admin-form-section">
+      <div className="category-section">
         <h2>새 카테고리 추가</h2>
         <form onSubmit={handleSubmit} className="admin-form">
           <div className="form-group">
@@ -186,7 +186,7 @@ function CategoryManagement() {
         </form>
       </div>
 
-      <div className="admin-list-section">
+      <div className="category-section">
         <h2>카테고리 목록 ({categories.length}개)</h2>
         <div className="category-list">
           {categories.length === 0 ? (
@@ -239,7 +239,7 @@ function CategoryManagement() {
                 ) : (
                   <>
                     <div className="category-info">
-                      <div className="category-header">
+                      <div className="category-name">
                         <h3>{category.name}</h3>
                         <div 
                           className="category-color-indicator"
@@ -253,9 +253,6 @@ function CategoryManagement() {
                           }}
                         ></div>
                         <span className="color-code">{category.color || '#007bff'}</span>
-                      </div>
-                      <div className="category-meta">
-                        생성일: {category.createdAt?.toLocaleDateString()}
                       </div>
                     </div>
                     <div className="category-actions">
