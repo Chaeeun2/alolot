@@ -19,7 +19,13 @@ function ScrollToTop() {
       // viewport 높이 먼저 재계산
       setViewportHeight();
       
-      // 1. 모든 스크롤 가능한 요소들 찾기
+      // 0. CSS 스크롤 동작 완전 비활성화
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      const originalBodyScrollBehavior = document.body.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+      
+      // 1. 모든 스크롤 가능한 요소들 찾기 (더 포괄적으로)
       const scrollableElements = [
         window,
         document,
@@ -33,13 +39,19 @@ function ScrollToTop() {
         document.querySelector('.layout-container'),
         ...document.querySelectorAll('[data-scroll]'),
         ...document.querySelectorAll('.scroll-container'),
-        ...document.querySelectorAll('[style*="overflow"]')
+        ...document.querySelectorAll('[style*="overflow"]'),
+        ...document.querySelectorAll('*[style*="scroll"]'),
+        ...document.querySelectorAll('.project-detail-container'),
+        ...document.querySelectorAll('.projects-container'),
+        ...document.querySelectorAll('.admin-detail-media-container'),
+        ...document.querySelectorAll('.project-list-simple')
       ];
 
-      // 2. 모든 요소의 스크롤 리셋
+      // 2. 모든 요소의 스크롤 강제 리셋
       scrollableElements.forEach(element => {
         if (element && typeof element.scrollTo === 'function') {
           try {
+            element.scrollTo(0, 0);
             element.scrollTo({
               top: 0,
               left: 0,
@@ -58,54 +70,61 @@ function ScrollToTop() {
 
       // 3. window 스크롤 강제 리셋 (여러 방법 시도)
       try {
+        window.scrollTo(0, -30);
         window.scrollTo({
-          top: 0,
+          top: -30,
           left: 0,
           behavior: 'instant'
         });
       } catch (e) {
-        window.scrollTo(0, 0);
+        window.scrollTo(0, -30);
       }
-      
+
       // 4. 레거시 방법들
       if (window.pageYOffset !== undefined) window.pageYOffset = 0;
       if (window.pageXOffset !== undefined) window.pageXOffset = 0;
       
-      // 5. 모바일 특화 처리
+      // 5. 모바일 특화 강력 처리
       if (isMobile) {
-        // iOS Safari 특별 처리
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          // 약간 아래로 스크롤 후 맨 위로 (iOS 바운스 방지)
-          window.scrollTo(0, 1);
-          setTimeout(() => {
-            window.scrollTo(0, 0);
-          }, 0);
+        // 즉시 실행
+        window.scrollTo(0, -30);
+        if (document.documentElement) {
+          document.documentElement.scrollTop = -30;
+          document.documentElement.scrollLeft = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = -30;
+          document.body.scrollLeft = 0;
         }
         
-        // requestAnimationFrame으로 추가 확인
+        // requestAnimationFrame으로 여러 번 확인
         requestAnimationFrame(() => {
-          window.scrollTo(0, 0);
+          window.scrollTo(0, -30);
           if (document.documentElement) {
-            document.documentElement.scrollTop = 0;
+            document.documentElement.scrollTop = -30;
           }
           if (document.body) {
-            document.body.scrollTop = 0;
+            document.body.scrollTop = -30;
           }
           
           // 한 번 더 확인
           requestAnimationFrame(() => {
-            window.scrollTo(0, 0);
+            window.scrollTo(0, -30);
+            if (document.documentElement) {
+              document.documentElement.scrollTop = -30;
+            }
+            if (document.body) {
+              document.body.scrollTop = -30;
+            }
           });
         });
       }
 
-      // 6. CSS 스크롤 동작 임시 비활성화 후 복원
-      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = 'auto';
-      
+      // 6. CSS 스크롤 동작 복원
       setTimeout(() => {
-        window.scrollTo(0, 0);
+        window.scrollTo(0, -30);
         document.documentElement.style.scrollBehavior = originalScrollBehavior;
+        document.body.style.scrollBehavior = originalBodyScrollBehavior;
       }, 0);
     };
 
@@ -114,7 +133,9 @@ function ScrollToTop() {
     
     // 더 많은 단계별 실행으로 확실하게
     const timers = [
+      setTimeout(forceScrollToTop, 1),    // 1ms
       setTimeout(forceScrollToTop, 10),   // 10ms
+      setTimeout(forceScrollToTop, 25),   // 25ms
       setTimeout(forceScrollToTop, 50),   // 50ms
       setTimeout(forceScrollToTop, 100),  // 100ms
       setTimeout(forceScrollToTop, 200),  // 200ms

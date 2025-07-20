@@ -50,6 +50,50 @@ body {
   scroll-behavior: auto !important;
 }
 
+/* 모바일에서 스크롤 위치 강제 리셋 */
+@media (max-width: 768px) {
+  html,
+  body {
+    scroll-behavior: auto !important;
+    -webkit-overflow-scrolling: auto;
+    scroll-padding-top: 0 !important;
+    scroll-padding-left: 0 !important;
+    scroll-padding-right: 0 !important;
+    scroll-padding-bottom: 0 !important;
+  }
+
+  /* 모바일에서 페이지 전환 시 스크롤 위치 강제 리셋 */
+  .App,
+  .layout-container,
+  .main-content,
+  .layout-content,
+  .project-detail-container,
+  .projects-container,
+  .admin-detail-media-container,
+  .project-list-simple {
+    scroll-behavior: auto !important;
+    -webkit-overflow-scrolling: auto;
+    scroll-padding-top: 0 !important;
+    scroll-padding-left: 0 !important;
+    scroll-padding-right: 0 !important;
+    scroll-padding-bottom: 0 !important;
+  }
+
+  /* 모바일에서 강제 스크롤 리셋 */
+  html:focus-within {
+    scroll-behavior: auto !important;
+  }
+
+  /* iOS Safari 특별 처리 */
+  @supports (-webkit-touch-callout: none) {
+    html,
+    body {
+      -webkit-overflow-scrolling: auto !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
