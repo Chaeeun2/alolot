@@ -63,6 +63,22 @@
   word-break: keep-all;
 }
 
+.project-detail-link {
+  margin-top: 30px;
+}
+
+.project-link-button {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #000;
+  color: white;
+  text-decoration: none;
+  font-family: Pretendard;
+  font-size: 20px;
+  font-weight: 600;
+  border: 2px solid #000;
+}
+
 .project-detail-description {
   font-size: 20px;
   line-height: 1.5;
@@ -130,7 +146,10 @@
 }
 
 .project-detail-video {
+  position: relative;
   width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 비율 (9/16 = 0.5625) */
   margin-bottom: 5px;
 }
 
@@ -139,8 +158,15 @@
 }
 
 .project-detail-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* 유튜브 플레이어 추가 스타일링 */
+  background: #000;
 }
 
 @media (max-width: 768px) {
@@ -198,7 +224,16 @@
     margin-bottom: 25px;
   }
 
-  .project-detail-video iframe {
-    height: 200px;
+  .project-detail-link {
+    margin-top: 20px;
+  }
+
+  .project-link-button {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+
+  .project-detail-video {
+    padding-bottom: 56.25%; /* 16:9 비율 유지 */
   }
 }

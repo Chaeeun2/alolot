@@ -49,7 +49,7 @@
 
 .main-projects-container .project-info h2 {
   font-size: 22px;
-  margin: 0 0 8px 0;
+  margin: 0;
   font-family: Pretendard;
   font-weight: 800;
   word-break: keep-all;
@@ -66,7 +66,7 @@
 .project-tag {
   display: inline-block;
   padding: 0px 7px;
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 500;
   border: none;
   transition: all 0.2s ease;
@@ -75,6 +75,7 @@
 .main-projects-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
 }
 
 .main-project-card {

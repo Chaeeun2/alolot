@@ -28,17 +28,9 @@ export const getProjects = async () => {
       };
     });
 
-    // order 필드로 정렬 (없으면 createdAt으로 정렬)
+    // 최근에 추가된 프로젝트가 앞으로 오도록 createdAt으로 정렬 (내림차순)
     projects.sort((a, b) => {
-      if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order;
-      } else if (a.order !== undefined) {
-        return -1;
-      } else if (b.order !== undefined) {
-        return 1;
-      } else {
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
     return projects;
@@ -53,6 +45,7 @@ export const addProject = async (projectData) => {
     const projectsRef = collection(db, 'projects');
     await addDoc(projectsRef, {
       ...projectData,
+      createdAt: new Date(), // 최신 프로젝트가 앞으로 오도록 현재 시간 설정
       detailMedia: projectData.detailMedia?.map((media, index) => ({
         ...media,
         order: index

@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { getMainImages, saveMainImageInfo, deleteMainImage, updateMainImagesOrder } from '../../services/imageService';
 import { getPresignedUrl } from '../../services/r2Service';
 import './MainPageManagement.css';
@@ -45,11 +62,43 @@ const validateFileSize = (file) => {
   }
 };
 
+// SortableItem 컴포넌트
+const SortableItem = ({ id, children, className, data }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, data });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={className}>
+      {children}
+    </div>
+  );
+};
+
 const MainPageManagement = () => {
   const [mainImages, setMainImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+
+  // DnD sensors 설정
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchMainImages();
@@ -128,23 +177,26 @@ const MainPageManagement = () => {
     }
   };
 
-  const handleDragEnd = async (result) => {
-    if (!result.destination) return;
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
 
-    const items = Array.from(mainImages);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    if (active.id !== over.id) {
+      const oldIndex = mainImages.findIndex(image => image.id === active.id);
+      const newIndex = mainImages.findIndex(image => image.id === over.id);
+      
+      const newItems = arrayMove(mainImages, oldIndex, newIndex);
 
-    // 즉시 UI 업데이트
-    setMainImages(items);
+      // 즉시 UI 업데이트
+      setMainImages(newItems);
 
-    try {
-      // 서버에 순서 업데이트
-      await updateMainImagesOrder(items);
-    } catch (error) {
-      console.error('순서 업데이트 실패:', error);
-      // 실패 시 원래 순서로 복구
-      await fetchMainImages();
+      try {
+        // 서버에 순서 업데이트
+        await updateMainImagesOrder(newItems);
+      } catch (error) {
+        console.error('순서 업데이트 실패:', error);
+        // 실패 시 원래 순서로 복구
+        await fetchMainImages();
+      }
     }
   };
 
@@ -183,44 +235,40 @@ const MainPageManagement = () => {
             <p>위에서 이미지를 업로드해주세요.</p>
           </div>
         ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable 
-              droppableId="main-images" 
-              isDropDisabled={false}
-              isCombineEnabled={false}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={mainImages.map(image => image.id)}
+              strategy={rectSortingStrategy}
             >
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="images-grid"
-                >
-                  {mainImages.map((image, index) => (
-                    <Draggable key={image.id} draggableId={image.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`image-item ${snapshot.isDragging ? 'dragging' : ''}`}
-                        >
-                          <img src={image.url} alt={image.title} />
-                          <button
-                            className="img-delete-button"
-                            onClick={(event) => handleDeleteImage(image.id, event)}
-                            title="이미지 삭제"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+              <div className="images-grid">
+                {mainImages.map((image, index) => (
+                  <SortableItem
+                    key={image.id}
+                    id={image.id}
+                    className="image-item"
+                    data={{ type: 'main-image' }}
+                  >
+                    <img src={image.url} alt={image.title} />
+                    <button
+                      className="img-delete-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteImage(image.id, event);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      title="이미지 삭제"
+                    >
+                      ×
+                    </button>
+                  </SortableItem>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>

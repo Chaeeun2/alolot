@@ -88,6 +88,11 @@ body {
   color: white;
   font-size: 25px;
   line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .image-preview {

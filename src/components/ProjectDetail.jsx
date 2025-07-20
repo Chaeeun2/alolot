@@ -61,10 +61,23 @@ const ProjectDetail = () => {
 
         <div className="project-detail-content">
           <div className="project-detail-info">
-                      
-                      <div className="project-detail-text" style={{ whiteSpace: 'pre-wrap' }}>
-            {project.detail}
-          </div>
+            <div className="project-detail-text" style={{ whiteSpace: 'pre-wrap' }}>
+              {project.detail}
+            </div>
+            
+            {/* 링크 버튼 */}
+            {project.linkUrl && project.linkButtonName && (
+              <div className="project-detail-link">
+                <a 
+                  href={project.linkUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="project-link-button"
+                >
+                  {project.linkButtonName} →
+                </a>
+              </div>
+            )}
           </div>
 
           {project.detailMedia && project.detailMedia.length > 0 && (
@@ -76,9 +89,9 @@ const ProjectDetail = () => {
                   ) : media.type === 'video' ? (
                     <div className="project-detail-video">
                       <iframe
-                        src={media.url}
+                        src={`${media.url}?controls=0&modestbranding=1&rel=0&showinfo=0`}
                         width="100%"
-                        height="400"
+                        height="100%"
                         frameBorder="0"
                         allowFullScreen
                         title={`동영상 ${index + 1}`}
