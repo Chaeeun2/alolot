@@ -167,6 +167,11 @@
 
   .main-projects-container .project-info {
     padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .main-project-card:nth-child(even) .project-info {
+    padding-left: 5px;
   }
 
   .main-projects-container .project-info h2 {

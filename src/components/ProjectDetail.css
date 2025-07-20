@@ -204,15 +204,15 @@
   }
 
   .project-detail-header {
-    padding: 20px 15px 15px 15px;
+    padding: 20px;
   }
 
   .project-detail-header h1 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .project-detail-info {
-    padding: 40px 15px 60px 15px;
+    padding: 20px 20px 70px 20px;
   }
 
   .project-detail-text {
@@ -221,7 +221,6 @@
 
   .project-detail-description {
     font-size: 16px;
-    margin-bottom: 25px;
   }
 
   .project-detail-link {
