@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { getProjects } from '../services/projectService';
 import { useBackground } from '../contexts/BackgroundContext';
@@ -123,6 +124,11 @@ const Projects = () => {
 
   return (
     <div className="main-projects-container">
+      <Helmet>
+        <title>PROJECTS | 스튜디오 어랏 ALOT</title>
+        <meta name="description" content="스튜디오 어랏 ALOT의 프로젝트 모음" />
+        <link rel="canonical" href="https://alolot-7fa32.web.app/projects" />
+      </Helmet>
       {/* 카테고리 필터 */}
       <div className="category-filter-container" ref={menuRef}>
         {/* 현재 선택된 카테고리 (메뉴가 닫혀있을 때만 표시) */}

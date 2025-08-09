@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProjects } from '../services/projectService';
 import { useBackground } from '../contexts/BackgroundContext';
@@ -48,6 +49,11 @@ const ProjectDetail = () => {
 
   return (
     <>
+      <Helmet>
+        <title>{project.title} | 스튜디오 어랏 ALOT</title>
+        <meta name="description" content={project.description || `${project.title} 상세`} />
+        <link rel="canonical" href={`https://alolot-7fa32.web.app/projects/${project.id}`} />
+      </Helmet>
       <SideMenu backgroundColor={backgroundColor} />
       <div className="project-detail-container">
         <div className="project-detail-header">

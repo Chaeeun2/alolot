@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { getMainImages } from '../services/imageService';
 import './MainPage.css';
 
@@ -90,6 +91,11 @@ const MainPage = () => {
 
   return (
     <div className="main-slideshow">
+      <Helmet>
+        <title>HOME | 스튜디오 어랏 ALOT</title>
+        <meta name="description" content="스튜디오 어랏 ALOT 메인" />
+        <link rel="canonical" href="https://alolot-7fa32.web.app/" />
+      </Helmet>
       <div className="slideshow-container">
         <div className="slide-wrapper">
           <div 

@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "ALOT",
+  "name": "스튜디오 어랏 ALOT",
   "icons": [
     {
       "src": "favicon.ico",
@@ -21,5 +21,6 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "description": "스튜디오 어랏 ALOT — 시선을 끄는 글, 흥미로운 코드, 기분좋은 그래픽을 만드는 그래픽 디자인 스튜디오"
 }
