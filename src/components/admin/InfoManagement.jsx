@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { getAboutInfo, saveAboutInfo } from '../../services/aboutService';
 import './InfoManagement.css';
 
@@ -13,6 +16,11 @@ const InfoManagement = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newProject, setNewProject] = useState('');
+
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 5 }
+  });
+  const sensors = useSensors(pointerSensor);
 
   useEffect(() => {
     fetchAboutInfo();
@@ -42,7 +50,8 @@ const InfoManagement = () => {
     if (newProject.trim()) {
       setAboutData(prev => ({
         ...prev,
-        anotherProjects: [...prev.anotherProjects, newProject.trim()]
+        // 가장 최근 항목이 맨 위로 오도록 앞에 추가
+        anotherProjects: [newProject.trim(), ...prev.anotherProjects]
       }));
       setNewProject('');
     }
@@ -62,6 +71,49 @@ const InfoManagement = () => {
         i === index ? newValue : project
       )
     }));
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = active.data.current.index;
+    const newIndex = over.data.current.index;
+    if (oldIndex === undefined || newIndex === undefined) return;
+
+    setAboutData(prev => ({
+      ...prev,
+      anotherProjects: arrayMove(prev.anotherProjects, oldIndex, newIndex)
+    }));
+  };
+
+  const SortableItem = ({ index, value, onChange, onDelete }) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+      id: index,
+      data: { index }
+    });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition
+    };
+
+    return (
+      <div ref={setNodeRef} style={style} className="noproject-item" {...attributes} {...listeners}>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(index, e.target.value)}
+          className="noproject-input"
+        />
+        <button 
+          onClick={() => onDelete(index)}
+          className="delete-button"
+        >
+          삭제
+        </button>
+      </div>
+    );
   };
 
   const handleSave = async () => {
@@ -156,24 +208,24 @@ const InfoManagement = () => {
                 추가
               </button>
             </div>
-            <div className="noprojects-list">
-              {aboutData.anotherProjects.map((project, index) => (
-                <div key={index} className="noproject-item">
-                  <input
-                    type="text"
-                    value={project}
-                    onChange={(e) => handleProjectEdit(index, e.target.value)}
-                    className="noproject-input"
-                  />
-                  <button 
-                    onClick={() => handleProjectDelete(index)}
-                    className="delete-button"
-                  >
-                    삭제
-                  </button>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={aboutData.anotherProjects.map((_, idx) => idx)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="noprojects-list">
+                  {aboutData.anotherProjects.map((project, index) => (
+                    <SortableItem
+                      key={index}
+                      index={index}
+                      value={project}
+                      onChange={handleProjectEdit}
+                      onDelete={handleProjectDelete}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         </section>
 
