@@ -1,6 +1,6 @@
 .projects-page ~ .main-content {
-  margin-left: 30%;
-  width: 70%;
+  margin-left: 25%;
+  width: 75%;
 }
 
 .main-projects-container {
@@ -20,12 +20,16 @@
   z-index: 1000;
 }
 
+.category-filter-item-wrap {
+  display: inline-block;
+}
+
 .main-projects-container .category-filter-button,
 .main-projects-container .selected-category {
   cursor: pointer;
   font-size: 6vw;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: opacity 0.2s linear 0s, transform 0.6s ease 0s;
   min-width: 60px;
   text-align: center;
   background: none;
@@ -34,13 +38,12 @@
   letter-spacing: -0.02em;
   line-height: 0.85;
   transform: translateX(0);
-  transition: all 0.6s ease;
 }
 
-.main-projects-container .category-filter-button:hover {
+/* JS로 토글되는 hover 클래스 */
+.main-projects-container .category-filter-button.is-hovered,
+.main-projects-container .selected-category.is-hovered {
   transform: perspective(800px) rotateX(180deg);
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
 }
 
 .main-projects-container .project-info {
@@ -98,7 +101,7 @@
 }
 
 .main-project-image:hover img {
-  transform: scale(1.05);
+  transform: scale(1) rotate(var(--tilt, 0deg));
 }
 
 .main-projects-loading {
@@ -200,9 +203,5 @@
     padding: 0;
   }
 
-  .main-projects-container .category-filter-button:hover {
-    transform: perspective(800px) rotateX(180deg);
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-  }
+  /* 모바일에서도 동일 클래스 사용 */
 }

@@ -13,6 +13,8 @@ const Projects = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const menuRef = useRef(null);
+  // 카테고리 버튼별 hover 해제 타이머 관리
+  const hoverTimeoutsRef = useRef(new Map());
   
   // BackgroundContext 사용
   const { categories, setBackgroundByCategory } = useBackground();
@@ -35,6 +37,14 @@ const Projects = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen]);
+
+  // 언마운트 시 모든 타이머 정리
+  useEffect(() => {
+    return () => {
+      hoverTimeoutsRef.current.forEach((id) => clearTimeout(id));
+      hoverTimeoutsRef.current.clear();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -84,6 +94,25 @@ const Projects = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleMouseEnter = (event) => {
+    const target = event.currentTarget;
+    const existingTimeout = hoverTimeoutsRef.current.get(target);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      hoverTimeoutsRef.current.delete(target);
+    }
+    target.classList.add('is-hovered');
+  };
+
+  const handleMouseLeave = (event) => {
+    const target = event.currentTarget;
+    const timeoutId = setTimeout(() => {
+      target.classList.remove('is-hovered');
+      hoverTimeoutsRef.current.delete(target);
+    }, 200);
+    hoverTimeoutsRef.current.set(target, timeoutId);
+  };
+
   if (loading) {
     return <div className="main-projects-loading">프로젝트를 불러오는 중...</div>;
   }
@@ -97,34 +126,45 @@ const Projects = () => {
       {/* 카테고리 필터 */}
       <div className="category-filter-container" ref={menuRef}>
         {/* 현재 선택된 카테고리 (메뉴가 닫혀있을 때만 표시) */}
-        {!isMenuOpen && (
-          <button
-            className={`category-filter-button selected-category`}
-            onClick={toggleMenu}
-          >
-            {selectedCategory}
-          </button>
-        )}
+          {!isMenuOpen && (
+            <div className="category-filter-item-wrap">
+              <button
+                className={`category-filter-button selected-category`}
+                onClick={toggleMenu}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                {selectedCategory}
+              </button>
+            </div>
+          )}
         
         {/* 다른 카테고리들 (메뉴가 열렸을 때만 표시) */}
         {isMenuOpen && (
           <>
             {/* ALL을 항상 먼저 표시 */}
-            <button
-              className="category-filter-button"
-              onClick={() => handleCategoryFilter('ALL')}
-            >
-              ALL
-            </button>
+            <div className="category-filter-item-wrap">
+              <button
+                className="category-filter-button"
+                onClick={() => handleCategoryFilter('ALL')}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                ALL
+              </button>
+            </div>
             {/* 모든 카테고리들을 생성 순서대로 표시 */}
             {categories.map((category) => (
-              <button
-                key={category.id}
-                className="category-filter-button"
-                onClick={() => handleCategoryFilter(category.name)}
-              >
-                {category.name}
-              </button>
+              <div key={category.id} className="category-filter-item-wrap">
+                <button
+                  className="category-filter-button"
+                  onClick={() => handleCategoryFilter(category.name)}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  {category.name}
+                </button>
+              </div>
             ))}
           </>
         )}
@@ -145,7 +185,14 @@ const Projects = () => {
               className="main-project-card"
               onClick={() => handleProjectClick(project.id)}
             >
-              <div className="main-project-image">
+              <div
+                className="main-project-image"
+                onMouseEnter={(e) => {
+                  // -7deg ~ 7deg 사이의 랜덤 각도
+                  const angle = (Math.random() * 14 - 7).toFixed(2);
+                  e.currentTarget.style.setProperty('--tilt', `${angle}deg`);
+                }}
+              >
                 <img src={project.thumbnailUrl} alt={project.title} />
               </div>
               <div className="project-info">
