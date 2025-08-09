@@ -114,7 +114,7 @@ const Projects = () => {
   };
 
   if (loading) {
-    return <div className="main-projects-loading">프로젝트를 불러오는 중...</div>;
+
   }
 
   if (error) {
@@ -174,7 +174,7 @@ const Projects = () => {
       {!filteredProjects || filteredProjects.length === 0 ? (
         <div className="main-projects-empty">
           {selectedCategory === 'ALL' 
-            ? '등록된 프로젝트가 없습니다.' 
+            ? '' 
             : `'${selectedCategory}' 카테고리에 해당하는 프로젝트가 없습니다.`}
         </div>
       ) : (
