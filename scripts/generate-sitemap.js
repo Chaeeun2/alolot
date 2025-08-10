@@ -124,10 +124,7 @@ function buildSitemap(baseUrl, staticPaths, projectEntries) {
 async function main() {
   try {
     await ensureFetch();
-    const projectId = getEnv('REACT_APP_FIREBASE_PROJECT_ID');
-    if (!projectId) {
-      throw new Error('REACT_APP_FIREBASE_PROJECT_ID is not defined');
-    }
+    const projectId = getEnv('REACT_APP_FIREBASE_PROJECT_ID', 'alolot-7fa32');
     const baseUrl = getEnv('PUBLIC_BASE_URL', 'https://alolot.kr');
     const projects = await fetchProjects(projectId);
     const staticPaths = [
