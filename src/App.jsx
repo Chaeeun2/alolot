@@ -97,7 +97,7 @@ function App() {
             <Helmet>
               <title>스튜디오 어랏 ALOT</title>
               <meta name="description" content="스튜디오 어랏 — 시선을 끄는 글, 흥미로운 코드, 기분좋은 그래픽" />
-              <link rel="canonical" href="https://alolot-7fa32.web.app/" />
+              <link rel="canonical" href="https://alolot.kr/" />
             </Helmet>
             <Routes>
               {/* Login Route */}

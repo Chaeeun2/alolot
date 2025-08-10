@@ -113,7 +113,8 @@ const MainPage = () => {
               <div key={image.id || index} className="slide">
                 <img
                   src={image.url}
-                  alt={image.title || `슬라이드 ${index + 1}`}
+                  alt={image.title ? `${image.title} 슬라이드` : `슬라이드 ${index + 1}`}
+                  loading="lazy"
                 />
               </div>
             ))}

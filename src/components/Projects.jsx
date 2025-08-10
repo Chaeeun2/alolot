@@ -199,7 +199,7 @@ const Projects = () => {
                   e.currentTarget.style.setProperty('--tilt', `${angle}deg`);
                 }}
               >
-                <img src={project.thumbnailUrl} alt={project.title} />
+                <img src={project.thumbnailUrl} alt={`${project.title} 썸네일`} loading="lazy" />
               </div>
               <div className="project-info">
                 <h2>{project.title}</h2>

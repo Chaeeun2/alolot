@@ -52,7 +52,28 @@ const ProjectDetail = () => {
       <Helmet>
         <title>{project.title} | 스튜디오 어랏 ALOT</title>
         <meta name="description" content={project.description || `${project.title} 상세`} />
-        <link rel="canonical" href={`https://alolot-7fa32.web.app/projects/${project.id}`} />
+        <link rel="canonical" href={`https://alolot.kr/projects/${project.id}`} />
+        <meta property="og:title" content={`${project.title} | 스튜디오 어랏 ALOT`} />
+        <meta property="og:description" content={project.description || `${project.title} 상세`} />
+        {project.thumbnailUrl && (
+          <meta property="og:image" content={project.thumbnailUrl} />
+        )}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://alolot.kr/projects/${project.id}`} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'CreativeWork',
+            name: project.title,
+            description: project.description || `${project.title} 상세`,
+            url: `https://alolot.kr/projects/${project.id}`,
+            image: project.thumbnailUrl ? [project.thumbnailUrl] : undefined,
+            publisher: {
+              '@type': 'Organization',
+              name: '스튜디오 어랏 ALOT'
+            }
+          })}
+        </script>
       </Helmet>
       <SideMenu backgroundColor={backgroundColor} />
       <div className="project-detail-container">
@@ -91,7 +112,7 @@ const ProjectDetail = () => {
               {project.detailMedia.map((media, index) => (
                 <div key={index} className="project-detail-media-item">
                   {media.type === 'image' ? (
-                    <img src={media.url} alt={`상세 이미지 ${index + 1}`} />
+                    <img src={media.url} alt={`${project.title} 상세 이미지 ${index + 1}`} loading="lazy" />
                   ) : media.type === 'video' ? (
                     <div className="project-detail-video">
                       <iframe
@@ -114,7 +135,7 @@ const ProjectDetail = () => {
             <div className="project-detail-images">
               {project.detailImages.map((image, index) => (
                 <div key={index} className="project-detail-image">
-                  <img src={image.url} alt={`상세 이미지 ${index + 1}`} />
+                  <img src={image.url} alt={`${project.title} 상세 이미지 ${index + 1}`} loading="lazy" />
                 </div>
               ))}
             </div>
