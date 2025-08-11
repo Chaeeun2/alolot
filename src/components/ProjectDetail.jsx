@@ -50,7 +50,7 @@ const ProjectDetail = () => {
   return (
     <>
       <Helmet>
-        <title>{project.title} | 스튜디오 어랏 ALOT</title>
+        <title>{project.title} - 스튜디오 어랏 ALOT</title>
         <meta name="description" content={project.description || `${project.title} 상세`} />
         <link rel="canonical" href={`https://alolot.kr/projects/${project.id}`} />
         <meta property="og:title" content={`${project.title} | 스튜디오 어랏 ALOT`} />
