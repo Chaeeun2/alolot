@@ -213,9 +213,7 @@
     width: 100%;
     height: calc(100svh - 61vw);
     margin-top: 61vw;
-    /* 모바일 브라우저 viewport 정확성을 위한 추가 조정 */
-    /* margin-top: calc(35vh - env(safe-area-inset-top, 0px) + 5px); */
-    /* min-margin-top: 125px; */ /* 최소 여백 보장 */
+    overflow: hidden;
   }
 
   .main-slideshow {
@@ -225,6 +223,7 @@
 
   .slide-wrapper {
     height: calc(100svh - 61vw);
+    overflow: hidden;
   }
 
   .slide {
