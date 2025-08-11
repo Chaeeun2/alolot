@@ -72,7 +72,7 @@ const MainPage = () => {
   }, [isAutoPlay, images.length]);
 
   if (loading) {
-    return <div className="main-loading">Loading...</div>;
+    return <div className="main-loading" style={{ overflow: 'hidden' }}>Loading...</div>;
   }
 
   if (images.length === 0) {
@@ -87,7 +87,7 @@ const MainPage = () => {
   }
 
   return (
-    <div className="main-slideshow">
+    <div className="main-slideshow" style={{ overflow: 'hidden' }}>
       <Helmet>
         <title>스튜디오 어랏 ALOT</title>
         <meta name="description" content="CREATIVE Web · Graphic Design STUDIO" />

@@ -30,5 +30,8 @@
   .main-content {
     margin-left: 0;
     margin-top: 61vw;
+    min-height: calc(100svh - 61vw);
+    height: calc(100svh - 61vw);
+    overflow: hidden;
   }
 }
