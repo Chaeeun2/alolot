@@ -94,7 +94,9 @@ const MainPageManagement = () => {
 
   // DnD sensors 설정
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 }
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -259,7 +261,9 @@ const MainPageManagement = () => {
                         event.stopPropagation();
                         handleDeleteImage(image.id, event);
                       }}
-                      onMouseDown={(e) => e.stopPropagation()}
+                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation(); }}
+                       onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation(); }}
+                       onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation(); }}
                       title="이미지 삭제"
                     >
                       ×

@@ -53,8 +53,8 @@ const About = () => {
   return (
     <div className="about-container">
       <Helmet>
-        <title>ABOUT | 스튜디오 어랏 ALOT</title>
-        <meta name="description" content="스튜디오 어랏 ALOT 소개 및 연락처, 파트너, 수록되지 않은 프로젝트" />
+        <title>ABOUT - 스튜디오 어랏 ALOT</title>
+        <meta name="description" content="CREATIVE Web · Graphic Design STUDIO" />
         <link rel="canonical" href="https://alolot-7fa32.web.app/about" />
       </Helmet>
       <div className="about-content">

@@ -125,8 +125,8 @@ const Projects = () => {
   return (
     <div className="main-projects-container">
       <Helmet>
-        <title>PROJECTS | 스튜디오 어랏 ALOT</title>
-        <meta name="description" content="스튜디오 어랏 ALOT의 프로젝트 모음" />
+        <title>PROJECTS - 스튜디오 어랏 ALOT</title>
+        <meta name="description" content="CREATIVE Web · Graphic Design STUDIO" />
         <link rel="canonical" href="https://alolot-7fa32.web.app/projects" />
       </Helmet>
       {/* 카테고리 필터 */}

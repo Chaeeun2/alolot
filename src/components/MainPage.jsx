@@ -92,8 +92,8 @@ const MainPage = () => {
   return (
     <div className="main-slideshow">
       <Helmet>
-        <title>HOME | 스튜디오 어랏 ALOT</title>
-        <meta name="description" content="스튜디오 어랏 ALOT 메인" />
+        <title>스튜디오 어랏 ALOT</title>
+        <meta name="description" content="CREATIVE Web · Graphic Design STUDIO" />
         <link rel="canonical" href="https://alolot-7fa32.web.app/" />
       </Helmet>
       <div className="slideshow-container">
