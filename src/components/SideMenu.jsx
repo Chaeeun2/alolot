@@ -34,7 +34,7 @@ const SideMenu = ({ backgroundColor = '#ffffff' }) => {
     const timeoutId = setTimeout(() => {
       target.classList.remove('is-hovered');
       hoverTimeoutsRef.current.delete(target);
-    }, 200);
+    }, 300);
     hoverTimeoutsRef.current.set(target, timeoutId);
   };
 

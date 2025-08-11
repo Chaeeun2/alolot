@@ -79,6 +79,11 @@ const Projects = () => {
     }
   }, [projects, selectedCategory]);
 
+  // 카테고리 변경 시 스크롤 맨 위로 이동
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedCategory]);
+
   const handleProjectClick = (projectId) => {
     navigate(`/projects/${projectId}`);
   };
@@ -110,7 +115,7 @@ const Projects = () => {
     const timeoutId = setTimeout(() => {
       target.classList.remove('is-hovered');
       hoverTimeoutsRef.current.delete(target);
-    }, 200);
+    }, 300);
     hoverTimeoutsRef.current.set(target, timeoutId);
   };
 
