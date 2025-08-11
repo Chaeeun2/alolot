@@ -208,7 +208,7 @@
   .main-content {
     margin-left: 0;
     width: 100%;
-    height: calc(100vh - 61vw);
+    height: calc((var(--vh, 1vh) * 100) - 61vw);
     margin-top: 61vw;
     /* 모바일 브라우저 viewport 정확성을 위한 추가 조정 */
     /* margin-top: calc(35vh - env(safe-area-inset-top, 0px) + 5px); */
@@ -216,16 +216,16 @@
   }
 
   .main-slideshow {
-    height: calc(100vh - 61vw);
+    height: calc((var(--vh, 1vh) * 100) - 61vw);
     overflow: hidden;
   }
 
   .slide-wrapper {
-    height: calc(100vh - 61vw);
+    height: calc((var(--vh, 1vh) * 100) - 61vw);
   }
 
   .slide {
-    height: calc(100vh - 61vw);
+    height: calc((var(--vh, 1vh) * 100) - 61vw);
   }
 
   .about-page .about {
