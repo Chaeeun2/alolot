@@ -233,4 +233,9 @@
   .about-page .about {
     display: none;
   }
+
+  .layout-container:has(.main-slideshow) {
+    height: 100svh;
+    overflow: hidden;
+  }
 }

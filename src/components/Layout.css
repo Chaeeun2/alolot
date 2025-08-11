@@ -19,8 +19,7 @@
 
 @media (max-width: 768px) {
   .layout-container {
-    height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden;
+    min-height: 100svh;
   }
 
   .layout-content {
