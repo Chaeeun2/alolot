@@ -18,6 +18,11 @@
 }
 
 @media (max-width: 768px) {
+  .layout-container {
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+  }
+
   .layout-content {
     margin-left: 0;
   }
