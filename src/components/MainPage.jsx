@@ -12,22 +12,10 @@ const MainPage = () => {
 
   // 모바일 여부 체크
   useEffect(() => {
-    const setViewportHeight = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    setViewportHeight();
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
-    window.addEventListener('resize', () => { setViewportHeight(); checkMobile(); });
-    window.addEventListener('orientationchange', setViewportHeight);
-    return () => {
-      window.removeEventListener('resize', () => { setViewportHeight(); checkMobile(); });
-      window.removeEventListener('orientationchange', setViewportHeight);
-    };
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // 슬라이드 높이 계산
@@ -111,11 +99,11 @@ const MainPage = () => {
             className="slide-track"
             style={{
               transform: isMobile 
-                ? `translateY(-${currentSlide * ((window.innerHeight || 0) - (61 * window.innerWidth / 100))}px)`
-                : `translateY(-${currentSlide * (window.innerHeight || 0)}px)`,
+                ? `translateY(-${currentSlide * (window.visualViewport ? window.visualViewport.height - (61 * window.innerWidth / 100) : window.innerHeight - (61 * window.innerWidth / 100))}px)`
+                : `translateY(-${currentSlide * (window.visualViewport ? window.visualViewport.height : window.innerHeight)}px)`,
               height: isMobile
-                ? `${images.length * ((window.innerHeight || 0) - (61 * window.innerWidth / 100))}px`
-                : `${images.length * (window.innerHeight || 0)}px`
+                ? `${images.length * (window.visualViewport ? window.visualViewport.height - (61 * window.innerWidth / 100) : window.innerHeight - (61 * window.innerWidth / 100))}px`
+                : `${images.length * (window.visualViewport ? window.visualViewport.height : window.innerHeight)}px`
             }}
           >
             {images.map((image, index) => (

@@ -1,6 +1,6 @@
 .main-image {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100svh;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -21,7 +21,7 @@
 
 .main-slideshow {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100svh;
   position: relative;
   overflow: hidden;
 }
@@ -33,7 +33,7 @@
 }
 
 .slide-wrapper {
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100%;
   position: relative;
 }
 
@@ -46,7 +46,7 @@
 
 .slide {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100%;
   flex-shrink: 0;
 }
 
@@ -167,7 +167,7 @@
 /* 로딩 및 빈 상태 */
 .main-loading {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +177,7 @@
 
 .main-no-images {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,7 +208,7 @@
   .main-content {
     margin-left: 0;
     width: 100%;
-    height: calc((var(--vh, 1vh) * 100) - 61vw);
+    height: calc(100svh - 61vw);
     margin-top: 61vw;
     /* 모바일 브라우저 viewport 정확성을 위한 추가 조정 */
     /* margin-top: calc(35vh - env(safe-area-inset-top, 0px) + 5px); */
@@ -216,16 +216,16 @@
   }
 
   .main-slideshow {
-    height: calc((var(--vh, 1vh) * 100) - 61vw);
+    height: calc(100svh - 61vw);
     overflow: hidden;
   }
 
   .slide-wrapper {
-    height: calc((var(--vh, 1vh) * 100) - 61vw);
+    height: calc(100svh - 61vw);
   }
 
   .slide {
-    height: calc((var(--vh, 1vh) * 100) - 61vw);
+    height: calc(100svh - 61vw);
   }
 
   .about-page .about {
